@@ -9,12 +9,13 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
+import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
+import com.aataganov.telegramcharts.views.models.SelectedDiapason;
+import com.aataganov.telegramcharts.views.models.StepValues;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import io.reactivex.Single;
@@ -24,24 +25,26 @@ import io.reactivex.schedulers.Schedulers;
 
 public class ViewChartDiapasonPicker extends View {
     private static final String LOG_TAG = ViewChartDiapasonPicker.class.getSimpleName();
+    public static final int HALF_ALPHA = 128;
 
     public ViewChartDiapasonPicker(Context context) {
         super(context);
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
+        selectedDiapason = new SelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width));
         initPaints();
     }
 
     public ViewChartDiapasonPicker(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
     public ViewChartDiapasonPicker(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context);
     }
 
     @Override
@@ -62,7 +65,10 @@ public class ViewChartDiapasonPicker extends View {
     private Chart chart;
     private Paint graphPaint = new Paint();
     private Paint textPaint = new Paint();
-    private ViewValues viewValues = new ViewValues();
+    private Paint diapasonEdgesPaint = new Paint();
+    private Paint diapasonSkipPaint = new Paint();
+    private StepValues stepValues = new StepValues();
+    private SelectedDiapason selectedDiapason;
     private CompositeDisposable viewBag = new CompositeDisposable();
 
     @Override
@@ -92,46 +98,60 @@ public class ViewChartDiapasonPicker extends View {
         graphPaint.setAntiAlias(true);
         graphPaint.setStrokeWidth(3);
         graphPaint.setStyle(Paint.Style.STROKE);
+        diapasonEdgesPaint.setStyle(Paint.Style.FILL);
+        diapasonEdgesPaint.setColor(Color.DKGRAY);
+        diapasonEdgesPaint.setAlpha(HALF_ALPHA);
+        diapasonSkipPaint.setStyle(Paint.Style.FILL);
+        diapasonSkipPaint.setColor(Color.LTGRAY);
+        diapasonSkipPaint.setAlpha(HALF_ALPHA);
         textPaint.setAntiAlias(true);
         textPaint.setColor(Color.LTGRAY);
     }
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.LTGRAY);
+        canvas.drawColor(Color.WHITE);
         if(chart == null){
             return;
         }
         drawChart(Color.GREEN,canvas,chart.getValuesY0());
         drawChart(Color.RED,canvas,chart.getValuesY1());
+        drawDiapasonSkipAreas(canvas);
+        drawDiapasonEdges(canvas);
     }
 
     private void drawChart(int color, Canvas canvas, List<Integer> values){
         graphPaint.setColor(color);
-        Path path = ChartHelper.drawChart(values, viewValues.maxY, viewValues.xStep, viewValues.yStep);
+        Path path = ChartHelper.drawChart(values, stepValues.getMaxY(), stepValues.getxStep(), stepValues.getyStep());
         canvas.drawPath(path,graphPaint);
     }
 
+    private void drawDiapasonSkipAreas(Canvas canvas){
+        if(!selectedDiapason.needToDrawStartSkip() && !selectedDiapason.needToDrawEndSkip()){
+            return;
+        }
+        Path path = new Path();
+        if(selectedDiapason.needToDrawStartSkip()){
+            path.addRect(selectedDiapason.getStartSkip(), Path.Direction.CW);
+        }
+        if(selectedDiapason.needToDrawStartSkip()){
+            path.addRect(selectedDiapason.getEndSkip(), Path.Direction.CW);
+        }
+        path.close();
+        canvas.drawPath(path,diapasonSkipPaint);
+    }
+
+    private void drawDiapasonEdges(Canvas canvas){
+        Path path = new Path();
+        path.addRect(selectedDiapason.getStartEdge(), Path.Direction.CW);
+        path.addRect(selectedDiapason.getEndEdge(), Path.Direction.CW);
+        path.close();
+        canvas.drawPath(path,diapasonEdgesPaint);
+    }
+
     private boolean recalculateValues(){
-        viewValues.update(chart,this);
+        stepValues.update(chart,this);
+        selectedDiapason.update(stepValues,this);
         return true;
     }
-
-
-    class ViewValues{
-        float xStep = 0;
-        float yStep = 0;
-        float maxY = 0;
-        public void update(Chart chart, View view){
-            if(chart == null){
-                return;
-            }
-            xStep = ((float) view.getWidth()) / chart.getValuesX().size();
-            int maxY0 = Collections.max(chart.getValuesY0());
-            int maxY1 = Collections.max(chart.getValuesY1());
-            maxY = Math.max(maxY0,maxY1);
-            yStep = ((float) view.getHeight()) / maxY;
-        }
-    }
-
 }
