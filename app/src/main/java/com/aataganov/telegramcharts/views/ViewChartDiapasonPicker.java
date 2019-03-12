@@ -34,6 +34,9 @@ public class ViewChartDiapasonPicker extends View {
     public static final int HALF_ALPHA = 128;
     public static final int ANIMATION_FRAME_COUNT = 10;
     public static final float MOVE_SENSITIVITY = 5f;
+    int verticalPadding;
+    int horizontalPadding;
+
     private float startPosition;
     private float touchedAreaStartPosition;
     private boolean animating = false;
@@ -43,6 +46,18 @@ public class ViewChartDiapasonPicker extends View {
     private float lastShift = 0;
     private PublishSubject<Float> moveShiftSubject = PublishSubject.create();
 
+
+    private Chart chart;
+    private Paint graphPaint = new Paint();
+    private Paint textPaint = new Paint();
+    private Paint diapasonEdgesPaint = new Paint();
+    private Paint diapasonSkipPaint = new Paint();
+    private StepValues stepValues;
+    private SelectedDiapason selectedDiapason;
+    private CompositeDisposable viewBag = new CompositeDisposable();
+    private Disposable animationDisposable;
+    private boolean isMovingDiapason = false;
+
     public ViewChartDiapasonPicker(Context context) {
         super(context);
         init(context);
@@ -50,7 +65,10 @@ public class ViewChartDiapasonPicker extends View {
 
     private void init(Context context) {
         subscribeToShiftChanges();
-        selectedDiapason = new SelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width));
+        verticalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_vertical_padding);
+        horizontalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_horizontal_padding);
+        selectedDiapason = new SelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width), verticalPadding, horizontalPadding);
+        stepValues = new StepValues(verticalPadding, horizontalPadding);
         initPaints();
     }
 
@@ -80,17 +98,6 @@ public class ViewChartDiapasonPicker extends View {
         CommonHelper.unsubscribeDisposable(animationDisposable);
         viewBag = null;
     }
-
-    private Chart chart;
-    private Paint graphPaint = new Paint();
-    private Paint textPaint = new Paint();
-    private Paint diapasonEdgesPaint = new Paint();
-    private Paint diapasonSkipPaint = new Paint();
-    private StepValues stepValues = new StepValues();
-    private SelectedDiapason selectedDiapason;
-    private CompositeDisposable viewBag = new CompositeDisposable();
-    private Disposable animationDisposable;
-    private boolean isMovingDiapason = false;
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -159,6 +166,7 @@ public class ViewChartDiapasonPicker extends View {
     private void drawChart(int color, Canvas canvas, List<Long> values){
         graphPaint.setColor(color);
         Path path = ChartHelper.drawChart(values, stepValues.getMaxY(), stepValues.getxStep(), stepValues.getyStep());
+        path.offset(horizontalPadding,verticalPadding);
         canvas.drawPath(path,graphPaint);
     }
 
@@ -217,7 +225,7 @@ public class ViewChartDiapasonPicker extends View {
     }
     private void subscribeToShiftChanges(){
         viewBag.add(moveShiftSubject.subscribeOn(Schedulers.computation())
-                .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift,this))
+                .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     if(result && !animating){

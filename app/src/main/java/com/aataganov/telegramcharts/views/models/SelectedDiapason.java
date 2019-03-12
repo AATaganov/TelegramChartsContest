@@ -8,10 +8,15 @@ import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 public class SelectedDiapason {
     private static final int MIN_DIAPASON_ITEMS_COUNT = 5;
     final int DIAPASON_EDGE_SELECTION_WIDTH;
-    final int edgeTouchArea;
+    final float edgeTouchAreaPadding;
+    private int verticalPadding;
+    private int horizontalPadding;
     float startCoordinate = -1;
     float endCoordinate = 0;
     float minDistance = 0;
+    private int viewHeight;
+    private int viewWidth;
+    private int widthWithoutPadding;
     RectF startSkip = new RectF();
     RectF endSkip = new RectF();
     RectF startEdge = new RectF();
@@ -33,29 +38,31 @@ public class SelectedDiapason {
         return endEdge;
     }
 
-    public SelectedDiapason(int edgeWidth) {
+    public SelectedDiapason(int edgeWidth, int verticalPadding, int horizontalPadding) {
         this.DIAPASON_EDGE_SELECTION_WIDTH = edgeWidth;
-        this.edgeTouchArea = edgeWidth / 2;
+        this.edgeTouchAreaPadding = edgeWidth * 0.8f;
+        this.verticalPadding = verticalPadding;
+        this.horizontalPadding = horizontalPadding;
     }
 
     public void update(StepValues stepValues, View view){
         minDistance = Math.max(stepValues.getxStep() * MIN_DIAPASON_ITEMS_COUNT, DIAPASON_EDGE_SELECTION_WIDTH * 2);
-        updateRectsStaticCoordinates(view);
-        resetValues(view);
+        updateReactsStaticCoordinates(view);
+        resetValues();
     }
 
-    boolean resetValues(View view){
-        return (updateStart(0,view) || updateEnd(view.getWidth(),view));
+    boolean resetValues(){
+        return (updateStart(verticalPadding) || updateEnd(viewWidth));
     }
 
-    boolean updateStart(float newStart, View view){
+    boolean updateStart(float newStart){
         float validNewValue = Math.min(newStart, endCoordinate - minDistance);
-        if(validNewValue < 0){
-            validNewValue = 0;
+        if(validNewValue < horizontalPadding){
+            validNewValue = horizontalPadding;
         }
         if(validNewValue != startCoordinate){
             startCoordinate = validNewValue;
-            recalculateStartReacts(view);
+            recalculateStartReacts();
             return true;
         }
         return false;
@@ -69,15 +76,15 @@ public class SelectedDiapason {
         return endSkip.left < endSkip.right;
     }
 
-    boolean updateEnd(float newEnd, View view){
+    boolean updateEnd(float newEnd){
         float validNewValue = Math.max(newEnd, startCoordinate + minDistance);
-        int maxRightPosition = view.getWidth();
+        float maxRightPosition = endSkip.right;
         if(validNewValue > maxRightPosition){
             validNewValue = maxRightPosition;
         }
         if(validNewValue != endCoordinate){
             endCoordinate = validNewValue;
-            recalculateEndReacts(view);
+            recalculateEndReacts();
             return true;
         }
         return false;
@@ -86,53 +93,60 @@ public class SelectedDiapason {
     private float getSelectedAreaStartPosition(){
         return startEdge.right;
     }
-    private boolean updateSelectedArea(float newX, View view) {
+    private boolean updateSelectedArea(float newX) {
         float areaWidth = endCoordinate - startCoordinate;
         float currentPosition = getSelectedAreaStartPosition();
         float difference = newX - currentPosition;
         if(difference == 0){
             return false;
         } else if(difference > 0){
-            if(updateEnd(endCoordinate + difference, view)){
-                updateStart(endCoordinate - areaWidth,view);
+            if(updateEnd(endCoordinate + difference)){
+                updateStart(endCoordinate - areaWidth);
                 return true;
             }
         } else {
-            if(updateStart(startCoordinate + difference, view)){
-                updateEnd(startCoordinate + areaWidth,view);
+            if(updateStart(startCoordinate + difference)){
+                updateEnd(startCoordinate + areaWidth);
                 return true;
             }
         }
         return false;
     }
 
-    private void updateRectsStaticCoordinates(View view){
-        int height = view.getHeight();
-        startEdge.bottom = height;
-        startSkip.bottom = height;
-        endSkip.bottom = height;
-        endEdge.bottom = height;
-        endSkip.right = view.getWidth();
+    private void updateReactsStaticCoordinates(View view){
+        viewHeight = view.getHeight();
+        viewWidth = view.getWidth();
+        int bottomCoordinate = viewHeight - verticalPadding;
+        startSkip.left = horizontalPadding;
+        startEdge.top = verticalPadding;
+        startSkip.top = verticalPadding;
+        endSkip.top = verticalPadding;
+        endEdge.top = verticalPadding;
+        startEdge.bottom = bottomCoordinate;
+        startSkip.bottom = bottomCoordinate;
+        endSkip.bottom = bottomCoordinate;
+        endEdge.bottom = bottomCoordinate;
+        endSkip.right = viewWidth - horizontalPadding;
     }
-    void recalculateStartReacts(View view){
-        float startEdgeLeft = Math.max(0, startCoordinate);
+    void recalculateStartReacts(){
+        float startEdgeLeft = Math.max(horizontalPadding, startCoordinate);
         startSkip.right = startEdgeLeft;
         startEdge.left = startEdgeLeft;
         startEdge.right = startEdgeLeft + DIAPASON_EDGE_SELECTION_WIDTH;
     }
-    void recalculateEndReacts(View view){
-        float endEdgeRight = Math.min(view.getWidth(), endCoordinate);
+    void recalculateEndReacts(){
+        float endEdgeRight = Math.min(endSkip.right, endCoordinate);
         endSkip.left = endEdgeRight;
         endEdge.right = endEdgeRight;
         endEdge.left = endEdgeRight - DIAPASON_EDGE_SELECTION_WIDTH;
     }
 
     public ViewChartDiapasonPicker.TouchedArea getTouchedArea(float x){
-        if(x < startEdge.left - edgeTouchArea || x > endEdge.right + edgeTouchArea){
+        if(x < startEdge.left - edgeTouchAreaPadding || x > endEdge.right + edgeTouchAreaPadding){
             return ViewChartDiapasonPicker.TouchedArea.NONE;
-        } else if(x < startEdge.right + edgeTouchArea){
+        } else if(x < startEdge.right + edgeTouchAreaPadding){
             return ViewChartDiapasonPicker.TouchedArea.START_EDGE;
-        } else if(x <= endEdge.left - edgeTouchArea){
+        } else if(x <= endEdge.left - edgeTouchAreaPadding){
             return ViewChartDiapasonPicker.TouchedArea.SELECTED_AREA;
         } else {
             return ViewChartDiapasonPicker.TouchedArea.END_EDGE;
@@ -164,14 +178,14 @@ public class SelectedDiapason {
         return 0;
     }
 
-    public boolean moveToNewPosition(ViewChartDiapasonPicker.TouchedArea touchedArea, float newX, View view) {
+    public boolean moveToNewPosition(ViewChartDiapasonPicker.TouchedArea touchedArea, float newX) {
         switch (touchedArea){
             case START_EDGE:
-                return updateStart(newX,view);
+                return updateStart(newX);
             case END_EDGE:
-                return updateEnd(newX,view);
+                return updateEnd(newX);
             case SELECTED_AREA:
-                return updateSelectedArea(newX,view);
+                return updateSelectedArea(newX);
         }
         return false;
     }

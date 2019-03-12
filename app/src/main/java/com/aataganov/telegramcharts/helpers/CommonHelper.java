@@ -41,4 +41,7 @@ public class CommonHelper {
             checkBox.setButtonTintList(ColorStateList.valueOf(color));//setButtonTintList is accessible directly on API>19
         }
     }
+    public static int calculateSizeWithPadding(int size, int padding){
+        return Math.max(0, size - padding - padding);
+    }
 }

@@ -2,6 +2,7 @@ package com.aataganov.telegramcharts.views.models;
 
 import android.view.View;
 
+import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
 
 import java.util.Collections;
@@ -11,11 +12,21 @@ public class StepValues {
     private float yStep = 0f;
     private float maxY = 0f;
     private float yCenter = 0f;
+    int verticalPadding;
+    int horizontalPadding;
+
+    public StepValues(int verticalPadding, int horizontalPadding) {
+        this.verticalPadding = verticalPadding;
+        this.horizontalPadding = horizontalPadding;
+    }
+
     public void update(Chart chart, View view){
         if(chart == null){
             return;
         }
-        xStep = ((float) view.getWidth()) / chart.getValuesX().size();
+        int widthWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getWidth(), horizontalPadding);
+        int heightWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getHeight(), verticalPadding);
+        xStep = ((float) widthWithoutPadding) / chart.getValuesX().size();
         maxY = 0;
         for (Chart.GraphData line:
              chart.getLines()) {
@@ -23,8 +34,8 @@ public class StepValues {
                 maxY = line.getMaxValue();
             }
         }
-        yStep = ((float) view.getHeight()) / maxY;
-        yCenter = (float) view.getHeight() * 0.5f;
+        yStep = ((float) heightWithoutPadding) / maxY;
+        yCenter = view.getHeight() * 0.5f;
     }
 
     public float getxStep() {
