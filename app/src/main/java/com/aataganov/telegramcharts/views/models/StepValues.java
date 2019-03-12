@@ -10,6 +10,7 @@ public class StepValues {
     float xStep = 0;
     float yStep = 0;
     float maxY = 0;
+    float yCenter = 0;
     public void update(Chart chart, View view){
         if(chart == null){
             return;
@@ -19,6 +20,7 @@ public class StepValues {
         int maxY1 = Collections.max(chart.getValuesY1());
         maxY = Math.max(maxY0,maxY1);
         yStep = ((float) view.getHeight()) / maxY;
+        yCenter = (float) view.getHeight() / 2f;
     }
 
     public float getxStep() {
@@ -31,5 +33,9 @@ public class StepValues {
 
     public float getMaxY() {
         return maxY;
+    }
+
+    public float getyCenter() {
+        return yCenter;
     }
 }

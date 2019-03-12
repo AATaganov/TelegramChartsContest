@@ -7,25 +7,41 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
+import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
 import com.aataganov.telegramcharts.views.models.SelectedDiapason;
 import com.aataganov.telegramcharts.views.models.StepValues;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 
 public class ViewChartDiapasonPicker extends View {
     private static final String LOG_TAG = ViewChartDiapasonPicker.class.getSimpleName();
     public static final int HALF_ALPHA = 128;
+    public static final int ANIMATION_FRAME_COUNT = 10;
+    public static final float MOVE_SENSITIVITY = 5f;
+    private float startPosition;
+    private float touchedAreaStartPosition;
+    private boolean animating = false;
+    private TouchedArea touchedArea;
+    private long movingStartTime;
+    private Long animationProgress;
+    private float lastShift = 0;
+    private PublishSubject<Float> moveShiftSubject = PublishSubject.create();
 
     public ViewChartDiapasonPicker(Context context) {
         super(context);
@@ -33,6 +49,7 @@ public class ViewChartDiapasonPicker extends View {
     }
 
     private void init(Context context) {
+        subscribeToShiftChanges();
         selectedDiapason = new SelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width));
         initPaints();
     }
@@ -52,6 +69,7 @@ public class ViewChartDiapasonPicker extends View {
         super.onAttachedToWindow();
         if(CommonHelper.isDisposed(viewBag)){
             viewBag = new CompositeDisposable();
+            subscribeToShiftChanges();
         }
     }
 
@@ -59,6 +77,7 @@ public class ViewChartDiapasonPicker extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         CommonHelper.unsubscribeDisposeBag(viewBag);
+        CommonHelper.unsubscribeDisposable(animationDisposable);
         viewBag = null;
     }
 
@@ -70,6 +89,8 @@ public class ViewChartDiapasonPicker extends View {
     private StepValues stepValues = new StepValues();
     private SelectedDiapason selectedDiapason;
     private CompositeDisposable viewBag = new CompositeDisposable();
+    private Disposable animationDisposable;
+    private boolean isMovingDiapason = false;
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -118,6 +139,20 @@ public class ViewChartDiapasonPicker extends View {
         drawChart(Color.RED,canvas,chart.getValuesY1());
         drawDiapasonSkipAreas(canvas);
         drawDiapasonEdges(canvas);
+        drawSelectionCircle(canvas);
+    }
+    private void drawSelectionCircle(Canvas canvas){
+        if((!animating && !isMovingDiapason || touchedArea == TouchedArea.NONE)){
+            return;
+        }
+        canvas.drawCircle(selectedDiapason.getSelectedAreaCenter(touchedArea),stepValues.getyCenter(), calculateSelectionCircleRadius(), diapasonSkipPaint);
+    }
+    private float calculateSelectionCircleRadius(){
+        if(isMovingDiapason && !animating){
+            return stepValues.getyCenter();
+        }
+        long circlePart = isMovingDiapason ? animationProgress : (ANIMATION_FRAME_COUNT - animationProgress);
+        return (stepValues.getyCenter() * circlePart) / (ANIMATION_FRAME_COUNT);
     }
 
     private void drawChart(int color, Canvas canvas, List<Integer> values){
@@ -134,7 +169,7 @@ public class ViewChartDiapasonPicker extends View {
         if(selectedDiapason.needToDrawStartSkip()){
             path.addRect(selectedDiapason.getStartSkip(), Path.Direction.CW);
         }
-        if(selectedDiapason.needToDrawStartSkip()){
+        if(selectedDiapason.needToDrawEndSkip()){
             path.addRect(selectedDiapason.getEndSkip(), Path.Direction.CW);
         }
         path.close();
@@ -153,5 +188,86 @@ public class ViewChartDiapasonPicker extends View {
         stepValues.update(chart,this);
         selectedDiapason.update(stepValues,this);
         return true;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction() & 255){
+            case MotionEvent.ACTION_DOWN:
+                onPointerDown(event);
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                onCancelMove();
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                onMove(event);
+                return true;
+        }
+        return super.onTouchEvent(event);
+    }
+    private void onMove(MotionEvent event){
+        float originalShift = startPosition - event.getX();
+        if(MathHelper.isInRange(originalShift - lastShift, MOVE_SENSITIVITY)){
+            return;
+        }
+        lastShift = originalShift;
+        moveShiftSubject.onNext(lastShift);
+    }
+    private void subscribeToShiftChanges(){
+        viewBag.add(moveShiftSubject.subscribeOn(Schedulers.computation())
+                .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift,this))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(result -> {
+                    if(result && !animating){
+                        postInvalidate();
+                    }
+                }, Throwable::printStackTrace));
+    }
+
+    private void onPointerDown(MotionEvent event){
+        touchedArea = selectedDiapason.getTouchedArea(event.getX());
+        if(touchedArea == TouchedArea.NONE){
+            isMovingDiapason = false;
+            return;
+        }
+        enterMovingState(event);
+        launchAnimationTimer();
+    }
+    private void onCancelMove(){
+        isMovingDiapason = false;
+        launchAnimationTimer();
+    }
+
+    private void enterMovingState(MotionEvent event){
+        isMovingDiapason = true;
+        startPosition = event.getX();
+        lastShift = 0;
+        touchedAreaStartPosition = selectedDiapason.getAreaPosition(touchedArea);
+        movingStartTime = System.currentTimeMillis();
+    }
+
+    public enum TouchedArea {
+        START_EDGE,
+        END_EDGE,
+        SELECTED_AREA,
+        NONE
+    }
+
+    private void launchAnimationTimer(){
+        animating = true;
+        CommonHelper.unsubscribeDisposable(animationDisposable);
+        animationDisposable = (Observable.intervalRange(1L, ANIMATION_FRAME_COUNT,0L,10L, TimeUnit.MILLISECONDS,AndroidSchedulers.mainThread())
+                .subscribe(res -> {
+                    animationProgress = res;
+                    postInvalidate();
+                }, error -> {
+                    animationProgress = -1L;
+                    animating = false;
+                    error.printStackTrace();
+                }, () -> {
+                    animating = false;
+                    }
+                ));
     }
 }
