@@ -3,41 +3,51 @@ package com.aataganov.telegramcharts;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 
+import com.aataganov.telegramcharts.adapters.AdapterChartsSelection;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
-import com.aataganov.telegramcharts.models.GraphSelection;
 import com.aataganov.telegramcharts.utils.AssetsLoader;
 import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
+
+import java.util.List;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.subjects.BehaviorSubject;
 
-public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements AdapterChartsSelection.SelectionListener {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     CompositeDisposable longLiveBag = new CompositeDisposable();
     ViewChartDiapasonPicker chartDiapasonPicker;
-    CheckBox checkBoxY0;
-    CheckBox checkBoxY1;
+    RecyclerView recyclerView;
+    LinearLayoutManager layoutManager;
 
-    BehaviorSubject<GraphSelection> graphSelectionSubject = BehaviorSubject.createDefault(new GraphSelection(true,true));
+    AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
+
+    BehaviorSubject<List<Boolean>> graphSelectionSubject = BehaviorSubject.create();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
+        initRecycler();
     }
 
     void initViews(){
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
-        checkBoxY0 = findViewById(R.id.checkBoxY0);
-        checkBoxY1 = findViewById(R.id.checkBoxY1);
-        checkBoxY0.setOnCheckedChangeListener(this);
-        checkBoxY1.setOnCheckedChangeListener(this);
+        recyclerView = findViewById(R.id.recycler_selection_checkboxes);
+        initRecycler();
+    }
+
+    void initRecycler() {
+        layoutManager = new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
+        adapterChartsSelection.setSelectionListener(this);
     }
 
     @Override
@@ -64,19 +74,15 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
 
     private void setNewChart(Chart chart){
         chartDiapasonPicker.setChart(chart);
-//        checkBoxY0.setText(chart.getTypes().getY0());
-//        checkBoxY1.setText(chart.getTypes().getY1());
-//        CommonHelper.updateCheckboxColor(chart.getColorY0(), checkBoxY0);
-//        CommonHelper.updateCheckboxColor(chart.getColorY1(), checkBoxY1);
+        adapterChartsSelection.updateData(chart.getLines());
+        if(recyclerView.getAdapter() == null){
+            recyclerView.setAdapter(adapterChartsSelection);
+        }
     }
 
 
     @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        updateGraphicsSelectionSubject();
-    }
-
-    private void updateGraphicsSelectionSubject() {
-        graphSelectionSubject.onNext(new GraphSelection(checkBoxY0.isChecked(), checkBoxY1.isChecked()));
+    public void onSelectionChanged(List<Boolean> selectionList) {
+        graphSelectionSubject.onNext(selectionList);
     }
 }
