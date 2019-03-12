@@ -135,8 +135,9 @@ public class ViewChartDiapasonPicker extends View {
         if(chart == null){
             return;
         }
-        drawChart(Color.GREEN,canvas,chart.getValuesY0());
-        drawChart(Color.RED,canvas,chart.getValuesY1());
+        for(Chart.GraphData line: chart.getLines()){
+            drawChart(line.getColor(), canvas, line.getValues());
+        }
         drawDiapasonSkipAreas(canvas);
         drawDiapasonEdges(canvas);
         drawSelectionCircle(canvas);
@@ -155,7 +156,7 @@ public class ViewChartDiapasonPicker extends View {
         return (stepValues.getyCenter() * circlePart) / (ANIMATION_FRAME_COUNT);
     }
 
-    private void drawChart(int color, Canvas canvas, List<Integer> values){
+    private void drawChart(int color, Canvas canvas, List<Long> values){
         graphPaint.setColor(color);
         Path path = ChartHelper.drawChart(values, stepValues.getMaxY(), stepValues.getxStep(), stepValues.getyStep());
         canvas.drawPath(path,graphPaint);

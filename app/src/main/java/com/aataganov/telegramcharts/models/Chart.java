@@ -1,55 +1,65 @@
 package com.aataganov.telegramcharts.models;
 
-import com.aataganov.telegramcharts.gson.GsonAxisValues;
-import com.aataganov.telegramcharts.gson.GsonTypes;
+import android.graphics.Color;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Chart {
-    List<Long> valuesX = new ArrayList<>();
-    List<Integer> valuesY0 = new ArrayList<>();
-    List<Integer> valuesY1 = new ArrayList<>();
-    GsonTypes types;
-    GsonAxisValues names;
-    GsonAxisValues colors;
+    List<Long> valuesX;
+    List<GraphData> lines;
 
-    public Chart(List<Long> valuesX,
-                 List<Integer> valuesY0,
-                 List<Integer> valuesY1,
-                 GsonTypes types,
-                 GsonAxisValues names,
-                 GsonAxisValues colors) {
-        this.valuesX = valuesX;
-        this.valuesY0 = valuesY0;
-        this.valuesY1 = valuesY1;
-        this.types = types;
-        this.names = names;
-        this.colors = colors;
+    public Chart(List<Long> xValues, List<GraphData> graphs) {
+        valuesX = xValues;
+        lines = graphs;
     }
-
 
     public List<Long> getValuesX() {
         return valuesX;
     }
 
-    public List<Integer> getValuesY0() {
-        return valuesY0;
+    public List<GraphData> getLines() {
+        return lines;
     }
 
-    public List<Integer> getValuesY1() {
-        return valuesY1;
-    }
+    public static class GraphData{
+        List<Long> values;
+        String type;
+        String name;
+        int color;
+        long maxValue;
 
-    public GsonTypes getTypes() {
-        return types;
-    }
+        public GraphData(List<Long> values, String type, String name, String color) {
+            this.values = values;
+            this.type = type;
+            this.name = name;
+            this.color = Color.parseColor(color);
+            maxValue = Collections.max(values);
+        }
 
-    public GsonAxisValues getNames() {
-        return names;
-    }
+        public GraphData(List<Long> values, String name) {
+            this.values = values;
+            this.name = name;
+        }
 
-    public GsonAxisValues getColors() {
-        return colors;
+        public List<Long> getValues() {
+            return values;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getColor() {
+            return color;
+        }
+
+        public long getMaxValue() {
+            return maxValue;
+        }
     }
 }

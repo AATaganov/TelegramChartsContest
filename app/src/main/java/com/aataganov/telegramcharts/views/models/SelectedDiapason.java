@@ -39,7 +39,7 @@ public class SelectedDiapason {
     }
 
     public void update(StepValues stepValues, View view){
-        minDistance = Math.max(stepValues.xStep * MIN_DIAPASON_ITEMS_COUNT, DIAPASON_EDGE_SELECTION_WIDTH * 2);
+        minDistance = Math.max(stepValues.getxStep() * MIN_DIAPASON_ITEMS_COUNT, DIAPASON_EDGE_SELECTION_WIDTH * 2);
         updateRectsStaticCoordinates(view);
         resetValues(view);
     }

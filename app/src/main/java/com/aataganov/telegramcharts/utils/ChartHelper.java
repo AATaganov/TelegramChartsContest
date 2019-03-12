@@ -5,7 +5,7 @@ import android.graphics.Path;
 import java.util.List;
 
 public class ChartHelper {
-    public static Path drawChart(List<Integer> values,
+    public static Path drawChart(List<Long> values,
                                  float maxY,
                                  float xStep,
                                  float yStep){
