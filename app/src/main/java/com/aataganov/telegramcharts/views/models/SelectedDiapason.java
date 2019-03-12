@@ -71,9 +71,9 @@ public class SelectedDiapason {
 
     boolean updateEnd(float newEnd, View view){
         float validNewValue = Math.max(newEnd, startCoordinate + minDistance);
-        int width = view.getWidth();
-        if(validNewValue > width){
-            validNewValue = width;
+        int maxRightPosition = view.getWidth();
+        if(validNewValue > maxRightPosition){
+            validNewValue = maxRightPosition;
         }
         if(validNewValue != endCoordinate){
             endCoordinate = validNewValue;
@@ -144,9 +144,9 @@ public class SelectedDiapason {
     public float getAreaPosition(ViewChartDiapasonPicker.TouchedArea touchedArea) {
         switch (touchedArea){
             case START_EDGE:
-                return startEdge.left;
+                return startCoordinate;
             case END_EDGE:
-                return endEdge.left;
+                return endCoordinate;
             case SELECTED_AREA:
                 return getSelectedAreaStartPosition();
         }
