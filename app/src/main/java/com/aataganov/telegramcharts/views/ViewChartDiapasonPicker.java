@@ -16,7 +16,7 @@ import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
-import com.aataganov.telegramcharts.views.models.SelectedDiapason;
+import com.aataganov.telegramcharts.views.models.DiapasonPickerSelectedDiapason;
 import com.aataganov.telegramcharts.views.models.StepValues;
 
 import java.util.ArrayList;
@@ -47,7 +47,6 @@ public class ViewChartDiapasonPicker extends View {
     List<Boolean> oldSelection = Collections.emptyList();
     List<Boolean> currentSelection = Collections.emptyList();
 
-
     private float startPosition;
     private float touchedAreaStartPosition;
     private boolean animatingTouch = false;
@@ -57,15 +56,14 @@ public class ViewChartDiapasonPicker extends View {
     private Long animationProgress;
     private float lastShift = 0;
     private PublishSubject<Float> moveShiftSubject = PublishSubject.create();
-
+//    private BehaviorSubject<>
 
     private Chart chart;
     private Paint graphPaint = new Paint();
-    private Paint textPaint = new Paint();
     private Paint diapasonEdgesPaint = new Paint();
     private Paint diapasonSkipPaint = new Paint();
     private StepValues stepValues;
-    private SelectedDiapason selectedDiapason;
+    private DiapasonPickerSelectedDiapason selectedDiapason;
     private CompositeDisposable viewBag = new CompositeDisposable();
     private Disposable touchAnimationDisposable;
     private Disposable transitionAnimationDisposable;
@@ -80,7 +78,7 @@ public class ViewChartDiapasonPicker extends View {
         subscribeToShiftChanges();
         verticalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_vertical_padding);
         horizontalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_horizontal_padding);
-        selectedDiapason = new SelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width), verticalPadding, horizontalPadding);
+        selectedDiapason = new DiapasonPickerSelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width), verticalPadding, horizontalPadding);
         stepValues = new StepValues(verticalPadding, horizontalPadding);
         initPaints();
     }
@@ -126,6 +124,7 @@ public class ViewChartDiapasonPicker extends View {
         updateValues(true);
 
     }
+
     private void updateValues(Boolean withTranstion){
         viewBag.add(Single.fromCallable(this::recalculateValues)
                 .subscribeOn(Schedulers.computation())
@@ -152,9 +151,8 @@ public class ViewChartDiapasonPicker extends View {
         diapasonSkipPaint.setStyle(Paint.Style.FILL);
         diapasonSkipPaint.setColor(Color.LTGRAY);
         diapasonSkipPaint.setAlpha(HALF_ALPHA);
-        textPaint.setAntiAlias(true);
-        textPaint.setColor(Color.LTGRAY);
     }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -167,6 +165,7 @@ public class ViewChartDiapasonPicker extends View {
         drawDiapasonEdges(canvas);
         drawSelectionCircle(canvas);
     }
+
     private void drawChart(Canvas canvas){
         int graphsSize = chart.getGraphsList().size();
         int fadingAlpha = FULL_ALPHA - transitionAnimationAlpha;
@@ -192,6 +191,7 @@ public class ViewChartDiapasonPicker extends View {
         }
         canvas.drawCircle(selectedDiapason.getSelectedAreaCenter(touchedArea),stepValues.getyCenter(), calculateSelectionCircleRadius(), diapasonSkipPaint);
     }
+
     private float calculateSelectionCircleRadius(){
         if(isMovingDiapason && !animatingTouch){
             return stepValues.getyCenter();
@@ -200,10 +200,10 @@ public class ViewChartDiapasonPicker extends View {
         return (stepValues.getyCenter() * circlePart) / (ANIMATION_FRAME_COUNT);
     }
 
-    private void drawGraph(int color, int alpha, float stepY, Canvas canvas, List<Long> values){
+    private void drawGraph(int color, int alpha, float stepY, Canvas canvas, List<Integer> values){
         graphPaint.setColor(color);
         graphPaint.setAlpha(alpha);
-        Path path = ChartHelper.drawChart(values, stepValues.getHeightWithoutPadding(), stepValues.getStepX(), stepY);
+        Path path = ChartHelper.buildGraphPath(values, stepValues.getHeightWithoutPadding(), stepValues.getStepX(), stepY);
         path.offset(horizontalPadding,verticalPadding);
         canvas.drawPath(path,graphPaint);
     }
@@ -253,6 +253,7 @@ public class ViewChartDiapasonPicker extends View {
         }
         return super.onTouchEvent(event);
     }
+
     private void onMove(MotionEvent event){
         float originalShift = startPosition - event.getX();
         if(MathHelper.isInRange(originalShift - lastShift, MOVE_SENSITIVITY)){
@@ -261,6 +262,7 @@ public class ViewChartDiapasonPicker extends View {
         lastShift = originalShift;
         moveShiftSubject.onNext(lastShift);
     }
+
     private void subscribeToShiftChanges(){
         viewBag.add(moveShiftSubject.subscribeOn(Schedulers.computation())
                 .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift))
@@ -281,6 +283,7 @@ public class ViewChartDiapasonPicker extends View {
         enterMovingState(event);
         launchTouchAnimation();
     }
+
     private void onCancelMove(){
         isMovingDiapason = false;
         launchTouchAnimation();

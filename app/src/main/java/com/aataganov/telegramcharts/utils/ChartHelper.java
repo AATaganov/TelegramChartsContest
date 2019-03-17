@@ -9,10 +9,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class ChartHelper {
-    public static Path drawChart(List<Long> values,
-                                 float yShift,
-                                 float xStep,
-                                 float yStep){
+    public static Path buildGraphPath(List<Integer> values,
+                                      float yShift,
+                                      float xStep,
+                                      float yStep){
         Path path = new Path();
         if(values.size() < 2){
             path.close();
@@ -32,7 +32,7 @@ public class ChartHelper {
         return path;
     }
 
-    private static void addLineToPath(Path path, float startX, float startY, float endX, float endY){
+    public static void addLineToPath(Path path, float startX, float startY, float endX, float endY){
         path.moveTo(startX,startY);
         path.lineTo(endX, endY);
     }
@@ -41,8 +41,26 @@ public class ChartHelper {
         Collections.copy(originalList, result);
         return result;
     }
-    public static float calculateMaxY(Chart chart, List<Boolean> selectionList){
-        float maxY = 0;
+
+    public static int calculateMaxY(Chart chart, List<Boolean> selectionList, int startIndex, int endIndex){
+        int maxY = 0;
+        int graphsSize = Math.min(chart.getValuesX().size(), endIndex);
+        for (int index = startIndex; index < graphsSize; ++index) {
+            if(selectionList.get(index)){
+                continue;
+            }
+            Chart.GraphData graph = chart.getGraphsList().get(index);
+            List<Integer> sublist = graph.getValues().subList(startIndex, endIndex);
+            Integer chartMaxY = Collections.max(sublist);
+            if(maxY < chartMaxY){
+                maxY = chartMaxY;
+            }
+        }
+        return maxY;
+    }
+
+    public static int calculateMaxY(Chart chart, List<Boolean> selectionList){
+        int maxY = 0;
         int graphsSize = chart.getGraphsList().size();
         for (int index = 0; index < graphsSize; ++index) {
             Chart.GraphData graph = chart.getGraphsList().get(index);
@@ -52,8 +70,8 @@ public class ChartHelper {
         }
         return maxY;
     }
-    public static float calculateMaxY(Chart chart){
-        float maxY = 0;
+    public static int calculateMaxY(Chart chart){
+        int maxY = 0;
         int graphsSize = chart.getGraphsList().size();
         for (int index = 0; index < graphsSize; ++index) {
             Chart.GraphData graph = chart.getGraphsList().get(index);

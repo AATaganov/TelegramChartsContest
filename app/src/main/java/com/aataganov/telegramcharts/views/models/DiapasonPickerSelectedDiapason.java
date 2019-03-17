@@ -5,7 +5,7 @@ import android.view.View;
 
 import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 
-public class SelectedDiapason {
+public class DiapasonPickerSelectedDiapason {
     private static final int MIN_DIAPASON_ITEMS_COUNT = 5;
     final int DIAPASON_EDGE_SELECTION_WIDTH;
     final float edgeTouchAreaPadding;
@@ -38,7 +38,7 @@ public class SelectedDiapason {
         return endEdge;
     }
 
-    public SelectedDiapason(int edgeWidth, int verticalPadding, int horizontalPadding) {
+    public DiapasonPickerSelectedDiapason(int edgeWidth, int verticalPadding, int horizontalPadding) {
         this.DIAPASON_EDGE_SELECTION_WIDTH = edgeWidth;
         this.edgeTouchAreaPadding = edgeWidth * 0.8f;
         this.verticalPadding = verticalPadding;
@@ -116,6 +116,7 @@ public class SelectedDiapason {
     private void updateReactsStaticCoordinates(View view){
         viewHeight = view.getHeight();
         viewWidth = view.getWidth();
+        widthWithoutPadding = viewWidth - horizontalPadding - horizontalPadding;
         int bottomCoordinate = viewHeight - verticalPadding;
         startSkip.left = horizontalPadding;
         startEdge.top = verticalPadding;
@@ -188,5 +189,20 @@ public class SelectedDiapason {
                 return updateSelectedArea(newX);
         }
         return false;
+    }
+
+    public ChartDiapason calculateDiapason(int itemsCount){
+        int startIndex = 0;
+        int endIndex = 0;
+        if(startCoordinate > horizontalPadding){
+            startIndex = (int) (((startCoordinate - horizontalPadding) * itemsCount) / widthWithoutPadding);
+        }
+        if(endCoordinate - horizontalPadding < widthWithoutPadding){
+            endIndex = (int) (((endCoordinate - horizontalPadding) * itemsCount) / widthWithoutPadding);
+        } else {
+            endIndex = itemsCount - 1;
+        }
+        return new ChartDiapason(startIndex, endIndex);
+
     }
 }

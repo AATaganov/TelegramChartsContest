@@ -8,4 +8,16 @@ public class MathHelper {
     public static boolean isOutOfRange(float value, float range){
         return (value > range || value < -range);
     }
+
+    public static int floorNumberToFirstToDigits(int number){
+        for(int power = 8; power > 3; --power){
+            int tensPower = ((Double) Math.pow(10, power)).intValue();
+            if(number > tensPower){
+                int twoDigitsShiftPower = ((Double) Math.pow(10, power - 2)).intValue();
+                int reminder = number % twoDigitsShiftPower;
+                return number - reminder;
+            }
+        }
+        return number;
+    }
 }

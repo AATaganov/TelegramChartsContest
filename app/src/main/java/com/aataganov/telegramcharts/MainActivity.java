@@ -12,6 +12,7 @@ import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.AssetsLoader;
 import com.aataganov.telegramcharts.utils.ChartHelper;
+import com.aataganov.telegramcharts.views.ViewChart;
 import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     CompositeDisposable longLiveBag = new CompositeDisposable();
     CompositeDisposable activeBag = new CompositeDisposable();
     ViewChartDiapasonPicker chartDiapasonPicker;
+    ViewChart chartView;
     RecyclerView recyclerView;
     LinearLayoutManager layoutManager;
 
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     void initViews(){
+        chartView = findViewById(R.id.chart_view);
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
         recyclerView = findViewById(R.id.recycler_selection_checkboxes);
         initRecycler();
@@ -89,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         longLiveBag.add(AssetsLoader.loadCharts(this).subscribe(
                 data -> {
                     Log.w(LOG_TAG,"Data: " + data.toString());
-                    setNewChart(data.get(4));
+                    setNewChart(data.get(3));
                 },
                 Throwable::printStackTrace
         ));
@@ -106,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         if(recyclerView.getAdapter() == null){
             recyclerView.setAdapter(adapterChartsSelection);
         }
+        chartView.setChart(selectedChart,selectionList);
     }
 
     @Override
@@ -122,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(res -> {
                     chartDiapasonPicker.setNewSelection(res);
+                    chartView.setNewSelection(res);
 
                 }, error -> {error.printStackTrace();}));
     }

@@ -30,7 +30,7 @@ public class StepValues {
         int widthWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getWidth(), horizontalPadding);
         heightWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getHeight(), verticalPadding);
         stepX = ((float) widthWithoutPadding) / chart.getValuesX().size();
-        float maxY = ChartHelper.calculateMaxY(chart);
+        long maxY = ChartHelper.calculateMaxY(chart);
         stepY = ((float) heightWithoutPadding) / maxY;
         stepYOld = stepY;
         yCenter = view.getHeight() * 0.5f;
@@ -50,7 +50,7 @@ public class StepValues {
 
     public void updateStepY(Chart chart, List<Boolean> selectionList){
         stepYOld = stepY;
-        float newMaxY = ChartHelper.calculateMaxY(chart, selectionList);
+        long newMaxY = ChartHelper.calculateMaxY(chart, selectionList);
         stepY = ((float) heightWithoutPadding) / newMaxY;
     }
     public float calculateTransitionStep(int transitionAlpha){

@@ -2,16 +2,24 @@ package com.aataganov.telegramcharts.models;
 
 import android.graphics.Color;
 
+import com.aataganov.telegramcharts.utils.ChartHelper;
+
 import java.util.Collections;
 import java.util.List;
 
 public class Chart {
     List<Long> valuesX;
     List<GraphData> graphsList;
+    int maxY;
 
     public Chart(List<Long> xValues, List<GraphData> graphs) {
         valuesX = xValues;
         graphsList = graphs;
+        maxY = ChartHelper.calculateMaxY(this);
+    }
+
+    public int getMaxY() {
+        return maxY;
     }
 
     public List<Long> getValuesX() {
@@ -23,13 +31,13 @@ public class Chart {
     }
 
     public static class GraphData{
-        List<Long> values;
+        List<Integer> values;
         String type;
         String name;
         int color;
-        long maxValue;
+        int maxValue;
 
-        public GraphData(List<Long> values, String type, String name, String color) {
+        public GraphData(List<Integer> values, String type, String name, String color) {
             this.values = values;
             this.type = type;
             this.name = name;
@@ -37,12 +45,7 @@ public class Chart {
             maxValue = Collections.max(values);
         }
 
-        public GraphData(List<Long> values, String name) {
-            this.values = values;
-            this.name = name;
-        }
-
-        public List<Long> getValues() {
+        public List<Integer> getValues() {
             return values;
         }
 
@@ -58,7 +61,7 @@ public class Chart {
             return color;
         }
 
-        public long getMaxValue() {
+        public int getMaxValue() {
             return maxValue;
         }
     }

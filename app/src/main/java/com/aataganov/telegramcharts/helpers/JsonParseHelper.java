@@ -40,13 +40,12 @@ public class JsonParseHelper {
         for(int index = 0; index < columnsLength; ++index){
             JSONArray columnJson = columns.getJSONArray(index);
             String key = parseGraphKey(columnJson);
-            List<Long> values = parseLongValues(columnJson);
             String typeString = jsonTypes.getString(key);
-
             if(typeString.equals(TYPE_X)){
-                xValues = values;
+                xValues = parseLongValues(columnJson);
                 continue;
             }
+            List<Integer> values = parseIntegerValues(columnJson);
             String name = jsonNames.getString(key);
             String color = jsonColors.getString(key);
             graphs.add(new Chart.GraphData(values,typeString,name,color));
