@@ -24,13 +24,9 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
         weakListener = new WeakReference<>(listener);
     }
 
-    public void updateData(List<Chart.GraphData> newList){
+    public void updateData(List<Chart.GraphData> newList,List<Boolean> newSelectionList){
         dataList = newList;
-        selectionList.clear();
-        for (Chart.GraphData ignored :
-             dataList) {
-            selectionList.add(true);
-        }
+        selectionList = newSelectionList;
     }
 
     @NonNull
@@ -61,15 +57,8 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
             checkBox = itemView.findViewById(R.id.checkbox);
             checkBox.setOnClickListener(v -> {
                 int position = getAdapterPosition();
-                boolean newValue = !selectionList.get(position);
-                checkBox.setChecked(newValue);
-                selectionList.set(position,newValue);
+                weakListener.get().onSelectionChanged(position);
                 notifyItemChanged(position);
-                if(weakListener.get() != null){
-//                    List<Boolean> newList = new ArrayList<>();
-//                    Collections.copy(selectionList,newList);
-                    weakListener.get().onSelectionChanged(selectionList);
-                }
             });
         }
 
@@ -82,6 +71,6 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public interface SelectionListener{
-        void onSelectionChanged(List<Boolean> selectionList);
+        void onSelectionChanged(int adapterPosition);
     }
 }

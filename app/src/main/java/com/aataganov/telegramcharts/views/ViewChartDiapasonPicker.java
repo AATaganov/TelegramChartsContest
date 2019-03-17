@@ -12,12 +12,15 @@ import android.view.View;
 
 import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
+import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
 import com.aataganov.telegramcharts.views.models.SelectedDiapason;
 import com.aataganov.telegramcharts.views.models.StepValues;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -29,17 +32,26 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 
+import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
+import static com.aataganov.telegramcharts.helpers.Constants.HALF_ALPHA;
+
 public class ViewChartDiapasonPicker extends View {
     private static final String LOG_TAG = ViewChartDiapasonPicker.class.getSimpleName();
-    public static final int HALF_ALPHA = 128;
     public static final int ANIMATION_FRAME_COUNT = 10;
+    public static final int TRANSITION_ANIMATION_FRAME_COUNT = 15;
     public static final float MOVE_SENSITIVITY = 5f;
     int verticalPadding;
     int horizontalPadding;
+    int transitionAnimationAlpha = FULL_ALPHA;
+
+    List<Boolean> oldSelection = Collections.emptyList();
+    List<Boolean> currentSelection = Collections.emptyList();
+
 
     private float startPosition;
     private float touchedAreaStartPosition;
-    private boolean animating = false;
+    private boolean animatingTouch = false;
+    private boolean animatingTransition = false;
     private TouchedArea touchedArea;
     private long movingStartTime;
     private Long animationProgress;
@@ -55,7 +67,8 @@ public class ViewChartDiapasonPicker extends View {
     private StepValues stepValues;
     private SelectedDiapason selectedDiapason;
     private CompositeDisposable viewBag = new CompositeDisposable();
-    private Disposable animationDisposable;
+    private Disposable touchAnimationDisposable;
+    private Disposable transitionAnimationDisposable;
     private boolean isMovingDiapason = false;
 
     public ViewChartDiapasonPicker(Context context) {
@@ -95,27 +108,34 @@ public class ViewChartDiapasonPicker extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         CommonHelper.unsubscribeDisposeBag(viewBag);
-        CommonHelper.unsubscribeDisposable(animationDisposable);
+        CommonHelper.unsubscribeDisposable(touchAnimationDisposable);
+        CommonHelper.unsubscribeDisposable(transitionAnimationDisposable);
         viewBag = null;
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        updateValues();
+        updateValues(false);
     }
 
-    public void setChart(Chart chart) {
+    public void setChart(Chart chart, List<Boolean> selectionList) {
+        oldSelection = null;
+        currentSelection = new ArrayList<>(selectionList);
         this.chart = chart;
-        updateValues();
+        updateValues(true);
 
     }
-    private void updateValues(){
+    private void updateValues(Boolean withTranstion){
         viewBag.add(Single.fromCallable(this::recalculateValues)
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    postInvalidate();
+                    if(withTranstion){
+                        launchTransitionAnimation();
+                    } else {
+                        postInvalidate();
+                    }
                 }, error -> {
                     error.printStackTrace();
                     Log.w(LOG_TAG,"Couldn't update chart values");
@@ -142,30 +162,48 @@ public class ViewChartDiapasonPicker extends View {
         if(chart == null){
             return;
         }
-        for(Chart.GraphData line: chart.getLines()){
-            drawChart(line.getColor(), canvas, line.getValues());
-        }
+        drawChart(canvas);
         drawDiapasonSkipAreas(canvas);
         drawDiapasonEdges(canvas);
         drawSelectionCircle(canvas);
     }
+    private void drawChart(Canvas canvas){
+        int graphsSize = chart.getGraphsList().size();
+        int fadingAlpha = FULL_ALPHA - transitionAnimationAlpha;
+        boolean hasOldSelection = ListHelper.hasItems(oldSelection);
+        float yStep = stepValues.calculateTransitionStep(transitionAnimationAlpha);
+        for(int index = 0; index < graphsSize; ++index){
+            Chart.GraphData graph = chart.getGraphsList().get(index);
+            if(currentSelection.get(index)) {
+                if(hasOldSelection && oldSelection.get(index)){
+                    drawGraph(graph.getColor(), FULL_ALPHA, yStep, canvas, graph.getValues());
+                } else {
+                    drawGraph(graph.getColor(), transitionAnimationAlpha, yStep, canvas, graph.getValues());
+                }
+            } else if(hasOldSelection && oldSelection.get(index)){
+                drawGraph(graph.getColor(),fadingAlpha, yStep, canvas,graph.getValues());
+            }
+        }
+    }
+
     private void drawSelectionCircle(Canvas canvas){
-        if((!animating && !isMovingDiapason || touchedArea == TouchedArea.NONE)){
+        if((!animatingTouch && !isMovingDiapason || touchedArea == TouchedArea.NONE)){
             return;
         }
         canvas.drawCircle(selectedDiapason.getSelectedAreaCenter(touchedArea),stepValues.getyCenter(), calculateSelectionCircleRadius(), diapasonSkipPaint);
     }
     private float calculateSelectionCircleRadius(){
-        if(isMovingDiapason && !animating){
+        if(isMovingDiapason && !animatingTouch){
             return stepValues.getyCenter();
         }
         long circlePart = isMovingDiapason ? animationProgress : (ANIMATION_FRAME_COUNT - animationProgress);
         return (stepValues.getyCenter() * circlePart) / (ANIMATION_FRAME_COUNT);
     }
 
-    private void drawChart(int color, Canvas canvas, List<Long> values){
+    private void drawGraph(int color, int alpha, float stepY, Canvas canvas, List<Long> values){
         graphPaint.setColor(color);
-        Path path = ChartHelper.drawChart(values, stepValues.getMaxY(), stepValues.getxStep(), stepValues.getyStep());
+        graphPaint.setAlpha(alpha);
+        Path path = ChartHelper.drawChart(values, stepValues.getHeightWithoutPadding(), stepValues.getStepX(), stepY);
         path.offset(horizontalPadding,verticalPadding);
         canvas.drawPath(path,graphPaint);
     }
@@ -228,7 +266,7 @@ public class ViewChartDiapasonPicker extends View {
                 .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    if(result && !animating){
+                    if(result && !animatingTouch){
                         postInvalidate();
                     }
                 }, Throwable::printStackTrace));
@@ -241,11 +279,11 @@ public class ViewChartDiapasonPicker extends View {
             return;
         }
         enterMovingState(event);
-        launchAnimationTimer();
+        launchTouchAnimation();
     }
     private void onCancelMove(){
         isMovingDiapason = false;
-        launchAnimationTimer();
+        launchTouchAnimation();
     }
 
     private void enterMovingState(MotionEvent event){
@@ -263,20 +301,54 @@ public class ViewChartDiapasonPicker extends View {
         NONE
     }
 
-    private void launchAnimationTimer(){
-        animating = true;
-        CommonHelper.unsubscribeDisposable(animationDisposable);
-        animationDisposable = (Observable.intervalRange(1L, ANIMATION_FRAME_COUNT,0L,10L, TimeUnit.MILLISECONDS,AndroidSchedulers.mainThread())
+    private void launchTouchAnimation(){
+        animatingTouch = true;
+        CommonHelper.unsubscribeDisposable(touchAnimationDisposable);
+        touchAnimationDisposable = (Observable.intervalRange(1L, ANIMATION_FRAME_COUNT,0L,10L, TimeUnit.MILLISECONDS,AndroidSchedulers.mainThread())
                 .subscribe(res -> {
                     animationProgress = res;
                     postInvalidate();
                 }, error -> {
                     animationProgress = -1L;
-                    animating = false;
+                    animatingTouch = false;
                     error.printStackTrace();
                 }, () -> {
-                    animating = false;
+                    animatingTouch = false;
                     }
                 ));
+    }
+
+    public void setNewSelection(List<Boolean> newSelection){
+        oldSelection = currentSelection;
+        currentSelection = newSelection;
+        stepValues.updateStepY(chart, currentSelection);
+        launchTransitionAnimation();
+    }
+
+    private void launchTransitionAnimation(){
+        animatingTransition = true;
+        transitionAnimationAlpha = 0;
+        CommonHelper.unsubscribeDisposable(transitionAnimationDisposable);
+        transitionAnimationDisposable = (Observable.intervalRange(1L, TRANSITION_ANIMATION_FRAME_COUNT,0L,30L, TimeUnit.MILLISECONDS,Schedulers.computation())
+                .map(lvl -> calculateTransitionAnimationAlpha(lvl))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(res -> {
+                            transitionAnimationAlpha = res;
+                            invalidate();
+                        }, error -> {
+                            transitionAnimationAlpha = FULL_ALPHA;
+                            animatingTransition = false;
+                            error.printStackTrace();
+                        }, () -> {
+                            transitionAnimationAlpha = FULL_ALPHA;
+                            animatingTransition = false;
+                        }
+                ));
+    }
+    private int calculateTransitionAnimationAlpha(long lvl){
+        if(lvl >= ANIMATION_FRAME_COUNT){
+            return FULL_ALPHA;
+        }
+        return (int) (FULL_ALPHA * lvl / ANIMATION_FRAME_COUNT);
     }
 }

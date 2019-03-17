@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="diapason_selection_edge_width">5dp</dimen>
-    <dimen name="diapason_selection_vertical_padding">20dp</dimen>
-    <dimen name="diapason_selection_horizontal_padding">16dp</dimen>
+    <dimen name="diapason_selection_vertical_padding">1dp</dimen>
+    <dimen name="diapason_selection_horizontal_padding">1dp</dimen>
 </resources>

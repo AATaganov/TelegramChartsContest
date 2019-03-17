@@ -7,19 +7,19 @@ import java.util.List;
 
 public class Chart {
     List<Long> valuesX;
-    List<GraphData> lines;
+    List<GraphData> graphsList;
 
     public Chart(List<Long> xValues, List<GraphData> graphs) {
         valuesX = xValues;
-        lines = graphs;
+        graphsList = graphs;
     }
 
     public List<Long> getValuesX() {
         return valuesX;
     }
 
-    public List<GraphData> getLines() {
-        return lines;
+    public List<GraphData> getGraphsList() {
+        return graphsList;
     }
 
     public static class GraphData{

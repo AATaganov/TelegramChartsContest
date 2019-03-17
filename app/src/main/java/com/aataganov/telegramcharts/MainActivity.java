@@ -11,16 +11,22 @@ import com.aataganov.telegramcharts.adapters.AdapterChartsSelection;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.AssetsLoader;
+import com.aataganov.telegramcharts.utils.ChartHelper;
 import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 
 public class MainActivity extends AppCompatActivity implements AdapterChartsSelection.SelectionListener {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     CompositeDisposable longLiveBag = new CompositeDisposable();
+    CompositeDisposable activeBag = new CompositeDisposable();
     ViewChartDiapasonPicker chartDiapasonPicker;
     RecyclerView recyclerView;
     LinearLayoutManager layoutManager;
@@ -28,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
 
     BehaviorSubject<List<Boolean>> graphSelectionSubject = BehaviorSubject.create();
+    private List<Boolean> selectionList = new ArrayList<>();
+    private Chart selectedChart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +65,21 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        if(CommonHelper.isDisposed(activeBag)){
+            activeBag = new CompositeDisposable();
+        }
+        subscribeToSelectionUpdates();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        CommonHelper.unsubscribeDisposeBag(activeBag);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         CommonHelper.unsubscribeDisposeBag(longLiveBag);
@@ -73,16 +96,33 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     private void setNewChart(Chart chart){
-        chartDiapasonPicker.setChart(chart);
-        adapterChartsSelection.updateData(chart.getLines());
+        selectedChart = chart;
+        for (Chart.GraphData ignored :
+                chart.getGraphsList()) {
+            selectionList.add(true);
+        }
+        chartDiapasonPicker.setChart(chart, selectionList);
+        adapterChartsSelection.updateData(selectedChart.getGraphsList(),selectionList);
         if(recyclerView.getAdapter() == null){
             recyclerView.setAdapter(adapterChartsSelection);
         }
     }
 
-
     @Override
-    public void onSelectionChanged(List<Boolean> selectionList) {
+    public void onSelectionChanged(int position) {
+        boolean newValue = !selectionList.get(position);
+        selectionList.set(position,newValue);
         graphSelectionSubject.onNext(selectionList);
+    }
+
+    public void subscribeToSelectionUpdates(){
+        longLiveBag.add(graphSelectionSubject.throttleLatest(600, TimeUnit.MILLISECONDS)
+                .observeOn(Schedulers.computation())
+                .map(selection -> ChartHelper.copySelectionList(selectionList))
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(res -> {
+                    chartDiapasonPicker.setNewSelection(res);
+
+                }, error -> {error.printStackTrace();}));
     }
 }
