@@ -8,6 +8,15 @@ public class ChartDiapason {
         this.startIndex = startIndex;
         this.endIndex = endIndex;
     }
+
+    public int getStartIndex() {
+        return startIndex;
+    }
+
+    public int getEndIndex() {
+        return endIndex;
+    }
+
     public int getItemsInDiapason(){
         return endIndex - startIndex;
     }

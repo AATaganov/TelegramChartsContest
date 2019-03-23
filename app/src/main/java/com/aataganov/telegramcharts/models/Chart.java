@@ -3,6 +3,7 @@ package com.aataganov.telegramcharts.models;
 import android.graphics.Color;
 
 import com.aataganov.telegramcharts.utils.ChartHelper;
+import com.aataganov.telegramcharts.views.models.ChartDiapason;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,5 +65,22 @@ public class Chart {
         public int getMaxValue() {
             return maxValue;
         }
+    }
+    public int getMaxY(ChartDiapason diapason, List<Boolean> selection){
+        int endIndex = diapason.getEndIndex();
+        int graphsSize = graphsList.size();
+        int result = 0;
+        for(int graphIndex = 0; graphIndex < graphsSize; ++graphIndex){
+            if(!selection.get(graphIndex)){
+                continue;
+            }
+            List<Integer> graphValues = graphsList.get(graphIndex).getValues();
+            for(int index = 0; index < endIndex; ++index){
+                if(result < graphValues.get(index)){
+                    result = graphValues.get(index);
+                }
+            }
+        }
+        return result;
     }
 }

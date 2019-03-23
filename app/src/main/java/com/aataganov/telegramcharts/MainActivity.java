@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     void initViews(){
         chartView = findViewById(R.id.chart_view);
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
+        chartView.setPicker(chartDiapasonPicker);
         recyclerView = findViewById(R.id.recycler_selection_checkboxes);
         initRecycler();
     }
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     private void setNewChart(Chart chart){
+        chartView.stopListeningDiapasonChanges();
         selectedChart = chart;
         for (Chart.GraphData ignored :
                 chart.getGraphsList()) {
@@ -110,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
             recyclerView.setAdapter(adapterChartsSelection);
         }
         chartView.setChart(selectedChart,selectionList);
+        chartView.subscribeToDiapasonChanges();
     }
 
     @Override

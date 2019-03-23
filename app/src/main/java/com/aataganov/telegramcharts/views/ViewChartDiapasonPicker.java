@@ -16,6 +16,7 @@ import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
+import com.aataganov.telegramcharts.views.models.ChartDiapason;
 import com.aataganov.telegramcharts.views.models.DiapasonPickerSelectedDiapason;
 import com.aataganov.telegramcharts.views.models.StepValues;
 
@@ -30,12 +31,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 
 import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
 import static com.aataganov.telegramcharts.helpers.Constants.HALF_ALPHA;
 
-public class ViewChartDiapasonPicker extends View {
+public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonPicker {
     private static final String LOG_TAG = ViewChartDiapasonPicker.class.getSimpleName();
     public static final int ANIMATION_FRAME_COUNT = 10;
     public static final int TRANSITION_ANIMATION_FRAME_COUNT = 15;
@@ -46,6 +48,8 @@ public class ViewChartDiapasonPicker extends View {
 
     List<Boolean> oldSelection = Collections.emptyList();
     List<Boolean> currentSelection = Collections.emptyList();
+
+    BehaviorSubject<ChartDiapason> selectedDiapasonSubject = BehaviorSubject.create();
 
     private float startPosition;
     private float touchedAreaStartPosition;
@@ -268,10 +272,17 @@ public class ViewChartDiapasonPicker extends View {
                 .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
+                    if(result){
+                        selectedDiapasonSubject.onNext(selectedDiapason.calculateDiapason(chart.getValuesX().size()));
+                    }
                     if(result && !animatingTouch){
                         postInvalidate();
                     }
                 }, Throwable::printStackTrace));
+    }
+
+    public Observable<ChartDiapason> getSelectedDiapasonObservable(){
+        return selectedDiapasonSubject.subscribeOn(Schedulers.io());
     }
 
     private void onPointerDown(MotionEvent event){
@@ -349,9 +360,9 @@ public class ViewChartDiapasonPicker extends View {
                 ));
     }
     private int calculateTransitionAnimationAlpha(long lvl){
-        if(lvl >= ANIMATION_FRAME_COUNT){
+        if(lvl >= TRANSITION_ANIMATION_FRAME_COUNT){
             return FULL_ALPHA;
         }
-        return (int) (FULL_ALPHA * lvl / ANIMATION_FRAME_COUNT);
+        return (int) (FULL_ALPHA * lvl / TRANSITION_ANIMATION_FRAME_COUNT);
     }
 }

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
+
 public class ChartHelper {
     public static Path buildGraphPath(List<Integer> values,
                                       float yShift,
@@ -80,5 +82,12 @@ public class ChartHelper {
             }
         }
         return maxY;
+    }
+
+    public static int calculateTransitionAlpha(long lvl, int maxCount){
+        if(lvl >= maxCount){
+            return FULL_ALPHA;
+        }
+        return (int) (FULL_ALPHA * lvl / maxCount);
     }
 }
