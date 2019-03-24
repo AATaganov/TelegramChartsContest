@@ -102,10 +102,8 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     private void setNewChart(Chart chart){
         chartView.stopListeningDiapasonChanges();
         selectedChart = chart;
-        for (Chart.GraphData ignored :
-                chart.getGraphsList()) {
-            selectionList.add(true);
-        }
+        selectionList.clear();
+        selectionList = ChartHelper.buildFullSelectedList(chart.getGraphsList().size());
         chartDiapasonPicker.setChart(chart, selectionList);
         adapterChartsSelection.updateData(selectedChart.getGraphsList(),selectionList);
         if(recyclerView.getAdapter() == null){

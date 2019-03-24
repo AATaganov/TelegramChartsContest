@@ -12,6 +12,7 @@ import android.view.View;
 import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.helpers.DateHelper;
+import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
@@ -58,16 +59,14 @@ public class ViewChart extends View {
     int baseLine = 0;
     int chartHeight = 0;
 
-    int transitionAlphaY = FULL_ALPHA;
-    int datesTransitionAlpha = FULL_ALPHA;
-
     MetricsValues currentMetricsValues;
     MetricsValues oldMetricValues;
 
     private CompositeDisposable viewBag = new CompositeDisposable();
-    private Disposable transitionAnimationDisposable;
-    private Disposable yTransitionAnimationDisposable;
-    private Disposable datesAnimationDisposable;
+
+    private AnimationTimer metricTransitionAnimation = new AnimationTimer(DEFAULT_ANIMATION_FRAME_COUNT,DEFAULT_ANIMATION_STEP);
+    private AnimationTimer datesAnimation = new AnimationTimer(DEFAULT_ANIMATION_FRAME_COUNT,DEFAULT_ANIMATION_STEP);
+    private AnimationTimer selectionAnimation = new AnimationTimer(DEFAULT_ANIMATION_FRAME_COUNT,DEFAULT_ANIMATION_STEP);
     private DiapasonPicker diapasonPicker;
     private Disposable selectedDiapasonDisposable;
     private PublishSubject<Boolean> invalidateRequestsSubject = PublishSubject.create();
@@ -142,8 +141,9 @@ public class ViewChart extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         CommonHelper.unsubscribeDisposeBag(viewBag);
-        CommonHelper.unsubscribeDisposable(transitionAnimationDisposable);
-        CommonHelper.unsubscribeDisposable(selectedDiapasonDisposable);
+        metricTransitionAnimation.unsubscribe();
+        datesAnimation.unsubscribe();
+        selectionAnimation.unsubscribe();
         viewBag = null;
     }
 
@@ -172,18 +172,15 @@ public class ViewChart extends View {
         }
         ChartDiapason.DrawChartValues chartValues = currentDiapason.getDrawChartValues(getWidth());
         float currentStepY = calculateTransitionY();
+        Log.w(LOG_TAG,"Current step:" + currentStepY);
         drawMetricsY(canvas, currentStepY);
         drawChart(chartValues.getOffset(), canvas, chartValues.getStep(), currentStepY);
         drawDates(chartValues.getOffset(), chartValues.getStep(), canvas);
     }
     private float calculateTransitionY(){
-        if(currentMetricsValues == null){
-            return 0;
-        }
-        if(transitionAlphaY == FULL_ALPHA || oldMetricValues == null){
-            return currentMetricsValues.yStep;
-        }
-        return ChartHelper.calculateTransitionStep(transitionAlphaY, currentMetricsValues.yStep, oldMetricValues.yStep);
+        float currentStep = (currentMetricsValues == null) ? 0 : currentMetricsValues.yStep;
+        float oldStep = (oldMetricValues == null) ? 0 : oldMetricValues.yStep;
+        return ChartHelper.calculateTransitionStep(metricTransitionAnimation.alpha, currentStep, oldStep);
     }
 
 
@@ -204,16 +201,27 @@ public class ViewChart extends View {
         int firstIndex = currentDiapason.getStartIndex();
         int lastIndex = currentDiapason.getEndIndex();
         int graphsSize = chart.getGraphsList().size();
+        boolean hasOldSelection = ListHelper.hasItems(oldSelection);
+        int fadingAlpha = FULL_ALPHA - selectionAnimation.alpha;
         for(int index = 0; index < graphsSize; ++index){
             Chart.GraphData graph = chart.getGraphsList().get(index);
             List<Integer> selectedValues = graph.getValues().subList(firstIndex, lastIndex + 1);
             if(currentSelection.get(index)) {
-                drawGraph(startOffset, graph.getColor(), FULL_ALPHA, canvas, selectedValues, stepX, stepY);
+                if(hasOldSelection && oldSelection.get(index)){
+                    drawGraph(startOffset, graph.getColor(), FULL_ALPHA, canvas, selectedValues, stepX, stepY);
+                } else {
+                    drawGraph(startOffset, graph.getColor(), selectionAnimation.alpha, canvas, selectedValues, stepX, stepY);
+                }
+            } else if(hasOldSelection && oldSelection.get(index)){
+                drawGraph(startOffset, graph.getColor(), fadingAlpha, canvas, selectedValues, stepX, stepY);
             }
         }
     }
 
     private void drawGraph(float startOffset, int color, int alpha, Canvas canvas, List<Integer> values, float stepX, float stepY){
+        if(alpha == 0){
+            return;
+        }
         graphPaint.setColor(color);
         graphPaint.setAlpha(alpha);
         Path path = ChartHelper.buildGraphPath(values, baseLine, stepX, stepY);
@@ -230,8 +238,8 @@ public class ViewChart extends View {
             long date = chart.getValuesX().get(lastChartIndex);
             drawAtTheEndOfChart(date, canvas, textPositionY);
         }
-        if(datesTransitionAlpha == FULL_ALPHA || oldDatesStep == 0){
-            drawJustCurrentDates(lastChartIndex, startIndex, stepX, startOffset, canvas, datesTransitionAlpha);
+        if(datesAnimation.alpha == FULL_ALPHA || oldDatesStep == 0){
+            drawJustCurrentDates(lastChartIndex, startIndex, stepX, startOffset, canvas, datesAnimation.alpha);
         } else {
             drawTransitionDates(lastChartIndex,startIndex,stepX,startOffset,canvas);
         }
@@ -262,9 +270,9 @@ public class ViewChart extends View {
             if(ChartHelper.isShiftInStepsArray(shift, currentDatesStep) && ChartHelper.isShiftInStepsArray(shift,oldDatesStep)){
                 drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA);
             } else if (ChartHelper.isShiftInStepsArray(shift, currentDatesStep)){
-                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, datesTransitionAlpha);
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, datesAnimation.alpha);
             } else {
-                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA - datesTransitionAlpha);
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA - datesAnimation.alpha);
             }
         }
     }
@@ -278,7 +286,7 @@ public class ViewChart extends View {
     }
     private void drawAtTheEndOfChart(long date, Canvas canvas, int textPositionY){
         if(oldDatesStep == 0){
-            metricTextPaint.setAlpha(datesTransitionAlpha);
+            metricTextPaint.setAlpha(datesAnimation.alpha);
         } else {
             metricTextPaint.setAlpha(FULL_ALPHA);
         }
@@ -288,10 +296,10 @@ public class ViewChart extends View {
     }
 
     private void drawMetricsY(Canvas canvas, float currentStepY){
-        drawMetricsY(canvas,currentStepY, transitionAlphaY);
-        if(transitionAlphaY < FULL_ALPHA && oldMetricValues != null){
+        drawMetricsY(canvas,currentStepY, metricTransitionAnimation.alpha);
+        if(metricTransitionAnimation.alpha < FULL_ALPHA && oldMetricValues != null){
             float oldStepY = (float) chartHeight / oldMetricValues.maxValueY;
-            drawMetricsY(canvas,oldStepY,FULL_ALPHA - transitionAlphaY);
+            drawMetricsY(canvas,oldStepY,FULL_ALPHA - metricTransitionAnimation.alpha);
         }
     }
 
@@ -313,7 +321,7 @@ public class ViewChart extends View {
     public void setChart(Chart newChart, List<Boolean> selectionList){
         CommonHelper.unsubscribeDisposable(selectedDiapasonDisposable);
         chart = newChart;
-        oldSelection = null;
+        oldSelection = ChartHelper.buildUnselectedList(selectionList.size());
         currentSelection = selectionList;
         if(currentDiapason == null) {
             currentDiapason = new ChartDiapason(0, newChart.getValuesX().size() - 1, 0, 0, getWidth());
@@ -322,12 +330,16 @@ public class ViewChart extends View {
         currentDatesStep = ChartHelper.calculateStep(currentDiapason.getItemsInDiapason(),DATE_ITEMS_TO_DISPLAY);
         oldMetricValues = currentMetricsValues;
         currentMetricsValues = new MetricsValues(newChart.getMaxY(currentDiapason,currentSelection), chartHeight);
-        requestInvalidation();
+        launchMetricTransition();
+        launshSelectionTransition();
+        launchDatesTransition();
     }
 
     public void setNewSelection(List<Boolean> newSelectionList) {
-        currentSelection = newSelectionList;
         oldSelection = currentSelection;
+        currentSelection = newSelectionList;
+        updateMetric();
+        launshSelectionTransition();
         requestInvalidation();
     }
 
@@ -375,40 +387,15 @@ public class ViewChart extends View {
     }
 
     private void launchMetricTransition() {
-        CommonHelper.unsubscribeDisposable(yTransitionAnimationDisposable);
-        transitionAlphaY = 0;
-        yTransitionAnimationDisposable = (Observable.intervalRange(1L, Y_TRANSITION_ANIMATION_FRAME_COUNT,0L,25L, TimeUnit.MILLISECONDS,Schedulers.io())
-                .map(lvl -> ChartHelper.calculateTransitionAlpha(lvl, Y_TRANSITION_ANIMATION_FRAME_COUNT))
-                .subscribe(res -> {
-                            transitionAlphaY = res;
-                            Log.w(LOG_TAG,"TransitionAlpha:" +transitionAlphaY);
-                            requestInvalidation();
-                        }, error -> {
-                            transitionAlphaY = FULL_ALPHA;
-                            requestInvalidation();
-                            error.printStackTrace();
-                        }, () -> {
-                            transitionAlphaY = FULL_ALPHA;
-                        }
-                ));
+        metricTransitionAnimation.launch();
     }
 
     private void launchDatesTransition() {
-        CommonHelper.unsubscribeDisposable(datesAnimationDisposable);
-        datesTransitionAlpha = FULL_ALPHA;
-        datesAnimationDisposable = (Observable.intervalRange(1L, DEFAULT_ANIMATION_FRAME_COUNT,0L,DEFAULT_ANIMATION_STEP, TimeUnit.MILLISECONDS,Schedulers.io())
-                .map(lvl -> ChartHelper.calculateTransitionAlpha(lvl, DEFAULT_ANIMATION_FRAME_COUNT))
-                .subscribe(res -> {
-                            datesTransitionAlpha = res;
-                            requestInvalidation();
-                        }, error -> {
-                            datesTransitionAlpha = FULL_ALPHA;
-                            requestInvalidation();
-                            error.printStackTrace();
-                        }, () -> {
-                            datesTransitionAlpha = FULL_ALPHA;
-                        }
-                ));
+        datesAnimation.launch();
+    }
+
+    private void launshSelectionTransition(){
+        selectionAnimation.launch();
     }
 
     class MetricsValues{
@@ -418,12 +405,49 @@ public class ViewChart extends View {
 
         MetricsValues(int maxValueY, int chartHeight) {
             this.maxValueY = maxValueY;
-            yStep = (float) chartHeight / maxValueY;
-            metricStep = MathHelper.floorNumberToFirstToDigits(maxValueY) / METRICS_ITEMS_TO_DISPLAY;
+            if(maxValueY == 0){
+                yStep = 0;
+                metricStep = 0;
+            } else {
+                yStep = (float) chartHeight / maxValueY;
+                metricStep = MathHelper.floorNumberToFirstToDigits(maxValueY) / METRICS_ITEMS_TO_DISPLAY;
+            }
         }
     }
 
     public interface DiapasonPicker{
         Observable<ChartDiapason> getSelectedDiapasonObservable();
+    }
+
+    class AnimationTimer{
+        private int frameCount;
+        private long animationPeriod;
+        private int alpha = FULL_ALPHA;
+        private Disposable animationDisposable;
+
+        public AnimationTimer(int frameCount, long animationPeriod) {
+            this.frameCount = frameCount;
+            this.animationPeriod = animationPeriod;
+        }
+        public void unsubscribe(){
+            CommonHelper.unsubscribeDisposable(animationDisposable);
+        }
+        public void launch(){
+            CommonHelper.unsubscribeDisposable(animationDisposable);
+            alpha = FULL_ALPHA;
+            animationDisposable = (Observable.intervalRange(1L, frameCount,0L,animationPeriod, TimeUnit.MILLISECONDS,Schedulers.io())
+                    .map(lvl -> ChartHelper.calculateTransitionAlpha(lvl, frameCount))
+                    .subscribe(res -> {
+                                alpha = res;
+                                requestInvalidation();
+                            }, error -> {
+                                alpha = FULL_ALPHA;
+                                requestInvalidation();
+                                error.printStackTrace();
+                            }, () -> {
+                                alpha = FULL_ALPHA;
+                            }
+                    ));
+        }
     }
 }

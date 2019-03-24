@@ -115,4 +115,18 @@ public class ChartHelper {
         float result = oldStep + (difference * ((float) transitionAlpha / Constants.FULL_ALPHA));
         return result;
     }
+    public static List<Boolean> buildFullSelectedList(int size){
+        List<Boolean> result = new ArrayList<>(size);
+        for(int index = 0; index < size; ++index){
+            result.add(true);
+        }
+        return result;
+    }
+    public static List<Boolean> buildUnselectedList(int size){
+        List<Boolean> result = new ArrayList<>(size);
+        for(int index = 0; index < size; ++index){
+            result.add(false);
+        }
+        return result;
+    }
 }
