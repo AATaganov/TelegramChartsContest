@@ -5,7 +5,10 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
 
     Button btnNext;
     Button btnPrevious;
+    Toolbar toolbar;
 
     AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
 
@@ -55,7 +59,34 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         initViews();
         initRecycler();
         initButtons();
+        initToolbar();
     }
+    private void initToolbar(){
+        setSupportActionBar(toolbar);
+        if(getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(R.string.activity_title);
+        }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main_activity_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menu_switch_theme){
+            switchTheme();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void switchTheme() {
+        Log.w(LOG_TAG,"SWITCH THEME CLICKED");
+    }
+
     private void subscribeToChartSelection(){
         activeBag.add(chartSubject.throttleLatest(1000, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
@@ -86,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     void initViews(){
+        toolbar = findViewById(R.id.toolbar);
         chartView = findViewById(R.id.chart_view);
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
         chartView.setPicker(chartDiapasonPicker);
