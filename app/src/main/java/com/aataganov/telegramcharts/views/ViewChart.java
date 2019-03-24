@@ -36,7 +36,6 @@ import io.reactivex.subjects.PublishSubject;
 import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
 
 public class ViewChart extends View {
-    public static final int Y_TRANSITION_ANIMATION_FRAME_COUNT = 15;
     public static final int DEFAULT_ANIMATION_FRAME_COUNT = 15;
     public static final long DEFAULT_ANIMATION_STEP = 25L;
     private static final int METRICS_ITEMS_TO_DISPLAY = 5;
@@ -223,7 +222,6 @@ public class ViewChart extends View {
         }
         ChartDiapason.DrawChartValues chartValues = currentDiapason.getDrawChartValues(getWidth());
         float currentStepY = calculateTransitionY();
-        Log.w(LOG_TAG,"Current step:" + currentStepY + "currentDiapason: " + currentDiapason.getEndIndex() + " chartValues: " + chartValues.getStep());
         drawMetricsY(canvas, currentStepY);
         drawChart(chartValues.getOffset(), canvas, chartValues.getStep(), currentStepY);
         drawDates(chartValues.getOffset(), chartValues.getStep(), canvas);
@@ -328,7 +326,7 @@ public class ViewChart extends View {
         int alpha;
         int value;
 
-        public SelectedDateGraphData(Chart.GraphData graph, int alpha, int value) {
+        SelectedDateGraphData(Chart.GraphData graph, int alpha, int value) {
             this.color = graph.getColor();
             this.name = graph.getName();
             this.alpha = alpha;
@@ -339,15 +337,11 @@ public class ViewChart extends View {
             return color;
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public int getAlpha() {
+        int getAlpha() {
             return alpha;
         }
 
-        public int getValue() {
+        int getValue() {
             return value;
         }
     }
@@ -530,10 +524,8 @@ public class ViewChart extends View {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction() & 255){
             case MotionEvent.ACTION_DOWN:
-                Log.w(LOG_TAG," ON DOWN");
                 return true;
             case MotionEvent.ACTION_UP:
-                Log.w(LOG_TAG," ON UP");
                 return onChartClick(event);
         }
         return super.onTouchEvent(event);
@@ -568,11 +560,7 @@ public class ViewChart extends View {
         }
         CommonHelper.unsubscribeDisposable(selectedDiapasonDisposable);
         selectedDiapasonDisposable = diapasonPicker.getSelectedDiapasonObservable().subscribe(
-                diapason -> {
-                    updateDiapason(diapason);
-                }, error -> {
-                    error.printStackTrace();
-                }
+                this::updateDiapason, Throwable::printStackTrace
         );
     }
     private void updateDiapason(ChartDiapason newDiapason){
@@ -645,14 +633,14 @@ public class ViewChart extends View {
         private int alpha = FULL_ALPHA;
         private Disposable animationDisposable;
 
-        public AnimationTimer(int frameCount, long animationPeriod) {
+        AnimationTimer(int frameCount, long animationPeriod) {
             this.frameCount = frameCount;
             this.animationPeriod = animationPeriod;
         }
-        public void unsubscribe(){
+        void unsubscribe(){
             CommonHelper.unsubscribeDisposable(animationDisposable);
         }
-        public void launch(){
+        void launch(){
             CommonHelper.unsubscribeDisposable(animationDisposable);
             alpha = FULL_ALPHA;
             animationDisposable = (Observable.intervalRange(1L, frameCount,0L,animationPeriod, TimeUnit.MILLISECONDS,Schedulers.io())
@@ -664,9 +652,7 @@ public class ViewChart extends View {
                                 alpha = FULL_ALPHA;
                                 requestInvalidation();
                                 error.printStackTrace();
-                            }, () -> {
-                                alpha = FULL_ALPHA;
-                            }
+                            }, () -> alpha = FULL_ALPHA
                     ));
         }
     }

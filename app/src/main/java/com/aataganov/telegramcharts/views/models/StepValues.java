@@ -3,7 +3,6 @@ package com.aataganov.telegramcharts.views.models;
 import android.view.View;
 
 import com.aataganov.telegramcharts.helpers.CommonHelper;
-import com.aataganov.telegramcharts.helpers.Constants;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
 
@@ -14,8 +13,8 @@ public class StepValues {
     private float stepY = 0f;
     private float stepYOld = 0f;
     private float yCenter = 0f;
-    int verticalPadding;
-    int horizontalPadding;
+    private int verticalPadding;
+    private int horizontalPadding;
     int itemsCount;
     private int heightWithoutPadding;
 

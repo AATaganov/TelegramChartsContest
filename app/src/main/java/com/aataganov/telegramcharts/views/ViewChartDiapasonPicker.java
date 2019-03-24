@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -37,7 +36,6 @@ import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
 import static com.aataganov.telegramcharts.helpers.Constants.HALF_ALPHA;
 
 public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonPicker {
-    private static final String LOG_TAG = ViewChartDiapasonPicker.class.getSimpleName();
     public static final int ANIMATION_FRAME_COUNT = 10;
     public static final int TRANSITION_ANIMATION_FRAME_COUNT = 15;
     public static final float MOVE_SENSITIVITY = 5f;
@@ -129,20 +127,17 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
 
     }
 
-    private void updateValues(Boolean withTranstion){
+    private void updateValues(Boolean withTransition){
         viewBag.add(Single.fromCallable(this::recalculateValues)
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    if(withTranstion){
+                    if(withTransition){
                         launchTransitionAnimation();
-                    } else {
+                    } else if (result) {
                         postInvalidate();
                     }
-                }, error -> {
-                    error.printStackTrace();
-                    Log.w(LOG_TAG,"Couldn't update chart values");
-                }));
+                }, Throwable::printStackTrace));
     }
 
     private void initPaints(){
@@ -333,9 +328,7 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
                     animationProgress = -1L;
                     animatingTouch = false;
                     error.printStackTrace();
-                }, () -> {
-                    animatingTouch = false;
-                    }
+                }, () -> animatingTouch = false
                 ));
     }
 
@@ -350,7 +343,7 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
         transitionAnimationAlpha = 0;
         CommonHelper.unsubscribeDisposable(transitionAnimationDisposable);
         transitionAnimationDisposable = (Observable.intervalRange(1L, TRANSITION_ANIMATION_FRAME_COUNT,0L,30L, TimeUnit.MILLISECONDS,Schedulers.computation())
-                .map(lvl -> calculateTransitionAnimationAlpha(lvl))
+                .map(this::calculateTransitionAnimationAlpha)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(res -> {
                             transitionAnimationAlpha = res;
@@ -358,9 +351,7 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
                         }, error -> {
                             transitionAnimationAlpha = FULL_ALPHA;
                             error.printStackTrace();
-                        }, () -> {
-                            transitionAnimationAlpha = FULL_ALPHA;
-                        }
+                        }, () -> transitionAnimationAlpha = FULL_ALPHA
                 ));
     }
     private int calculateTransitionAnimationAlpha(long lvl){

@@ -7,25 +7,24 @@ import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 
 public class DiapasonPickerSelectedDiapason {
     private static final int MIN_DIAPASON_ITEMS_COUNT = 5;
-    final int DIAPASON_EDGE_SELECTION_WIDTH;
-    final int DIAPASON_EDGE_SELECTION_HEIGHT;
-    final float edgeTouchAreaPadding;
+    private final int DIAPASON_EDGE_SELECTION_WIDTH;
+    private final int DIAPASON_EDGE_SELECTION_HEIGHT;
+    private final float edgeTouchAreaPadding;
     private int verticalPadding;
     private int horizontalPadding;
-    float startCoordinate = -1;
-    float endCoordinate = 0;
-    float minDistance = 0;
-    float itemWidth;
-    int itemsCount;
-    private int viewHeight;
+    private float startCoordinate = -1;
+    private float endCoordinate = 0;
+    private float minDistance = 0;
+    private float itemWidth;
+    private int itemsCount;
     private int viewWidth;
     private int widthWithoutPadding;
-    RectF startSkip = new RectF();
-    RectF endSkip = new RectF();
-    RectF startEdge = new RectF();
-    RectF endEdge = new RectF();
-    RectF topEdge = new RectF();
-    RectF bottomEdge = new RectF();
+    private RectF startSkip = new RectF();
+    private RectF endSkip = new RectF();
+    private RectF startEdge = new RectF();
+    private RectF endEdge = new RectF();
+    private RectF topEdge = new RectF();
+    private RectF bottomEdge = new RectF();
 
     public RectF getStartSkip() {
         return startSkip;
@@ -70,13 +69,13 @@ public class DiapasonPickerSelectedDiapason {
         resetValues();
     }
 
-    boolean resetValues(){
+    private boolean resetValues(){
         boolean updateStartResult = updateStart(verticalPadding);
         boolean updateEndResult = updateEnd(viewWidth);
         return (updateStartResult || updateEndResult);
     }
 
-    boolean updateStart(float newStart){
+    private boolean updateStart(float newStart){
         float validNewValue = Math.min(newStart, endCoordinate - minDistance);
         if(validNewValue < horizontalPadding){
             validNewValue = horizontalPadding;
@@ -97,7 +96,7 @@ public class DiapasonPickerSelectedDiapason {
         return endSkip.left < endSkip.right;
     }
 
-    boolean updateEnd(float newEnd){
+    private boolean updateEnd(float newEnd){
         float validNewValue = Math.max(newEnd, startCoordinate + minDistance);
         float maxRightPosition = endSkip.right;
         if(validNewValue > maxRightPosition){
@@ -135,7 +134,7 @@ public class DiapasonPickerSelectedDiapason {
     }
 
     private void updateReactsStaticCoordinates(View view){
-        viewHeight = view.getHeight();
+        int viewHeight = view.getHeight();
         viewWidth = view.getWidth();
         widthWithoutPadding = viewWidth - horizontalPadding - horizontalPadding;
         int bottomCoordinate = viewHeight - verticalPadding;
