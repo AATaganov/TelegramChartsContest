@@ -236,7 +236,7 @@ public class DiapasonPickerSelectedDiapason {
         } else {
             endIndex = itemsCount - 1;
         }
-        return new ChartDiapason(startIndex, endIndex, startShift, endShift, endCoordinate - startCoordinate);
+        return new ChartDiapason(startIndex, endIndex, startShift, endShift, endCoordinate - startCoordinate, itemsCount);
 
     }
 }

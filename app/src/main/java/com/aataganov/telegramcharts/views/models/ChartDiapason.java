@@ -6,16 +6,18 @@ public class ChartDiapason {
     int itemsInDiapason;
     private float startShift;
     private float endShift;
+    private int itemsCount;
     private float selectedDiapasonWidth;
     private float wholeDiapasonWidth;
     private float previewItemWidth;
     private DrawChartValues chartValues;
 
-    public ChartDiapason(int startIndex, int endIndex, float startShift, float endShift, float selectedDiapasonWidth) {
+    public ChartDiapason(int startIndex, int endIndex, float startShift, float endShift, float selectedDiapasonWidth, int itemsCount) {
         this.startIndex = startIndex;
         this.endIndex = endIndex;
         this.startShift = startShift;
         this.endShift = endShift;
+        this.itemsCount = itemsCount;
         itemsInDiapason = endIndex - startIndex;
         this.selectedDiapasonWidth = selectedDiapasonWidth;
         wholeDiapasonWidth = selectedDiapasonWidth + startShift + endShift;
@@ -40,6 +42,10 @@ public class ChartDiapason {
 
     public float getEndShift() {
         return endShift;
+    }
+
+    public int getItemsCount() {
+        return itemsCount;
     }
 
     public DrawChartValues getDrawChartValues(int chartWidth){

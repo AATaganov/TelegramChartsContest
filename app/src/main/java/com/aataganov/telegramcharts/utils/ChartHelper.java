@@ -4,6 +4,7 @@ import android.graphics.Path;
 
 import com.aataganov.telegramcharts.helpers.Constants;
 import com.aataganov.telegramcharts.models.Chart;
+import com.aataganov.telegramcharts.views.models.ChartDiapason;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,5 +129,25 @@ public class ChartHelper {
             result.add(false);
         }
         return result;
+    }
+
+    public static int calculateClickedIndex(float xPosition, int width, ChartDiapason diapason){
+        ChartDiapason.DrawChartValues chartValues = diapason.getDrawChartValues(width);
+        float stepX = chartValues.getStep();
+        float edgeStep = stepX * 0.8f;
+        float halfStep = stepX * 0.8f;
+        if(chartValues.getOffset() == 0 && xPosition < edgeStep){
+            return diapason.getStartIndex();
+        }
+        int startIndex = diapason.getStartIndex() + 1;
+        int endIndex = diapason.getEndIndex();
+        float elementEndCoordinate = stepX + halfStep - chartValues.getOffset();
+        for(int searchingIndex = startIndex; searchingIndex < endIndex; searchingIndex++){
+            if(xPosition < elementEndCoordinate){
+                return searchingIndex;
+            }
+            elementEndCoordinate += stepX;
+        }
+        return diapason.getEndIndex();
     }
 }

@@ -31,7 +31,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 
 import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
@@ -49,7 +48,7 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     List<Boolean> oldSelection = Collections.emptyList();
     List<Boolean> currentSelection = Collections.emptyList();
 
-    BehaviorSubject<ChartDiapason> selectedDiapasonSubject = BehaviorSubject.create();
+    PublishSubject<ChartDiapason> selectedDiapasonSubject = PublishSubject.create();
 
     private float startPosition;
     private float touchedAreaStartPosition;
