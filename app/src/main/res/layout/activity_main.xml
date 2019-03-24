@@ -28,13 +28,13 @@
         app:layout_constraintTop_toBottomOf="@id/txt_chart_title"
         android:id="@+id/chart_view"
         android:layout_width="match_parent"
-        android:layout_height="300dp" />
+        android:layout_height="@dimen/chart_height" />
 
     <com.aataganov.telegramcharts.views.ViewChartDiapasonPicker
         app:layout_constraintTop_toBottomOf="@id/chart_view"
         android:id="@+id/view_diapason_picker"
         android:layout_width="match_parent"
-        android:layout_height="80dp" />
+        android:layout_height="@dimen/diapason_picker_height" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_selection_checkboxes"
@@ -43,5 +43,26 @@
         android:layout_width="match_parent"
         android:layout_height="0dp">
     </android.support.v7.widget.RecyclerView>
+
+    <Button
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        android:text="Next"
+        android:textColor="@color/borderless_button_text_color"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/btn_next_chart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        android:text="Previous"
+        android:textColor="@color/borderless_button_text_color"
+        app:layout_constraintEnd_toStartOf="@id/btn_next_chart"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/btn_previous_chart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
 
 </android.support.constraint.ConstraintLayout>

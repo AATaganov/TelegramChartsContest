@@ -71,7 +71,9 @@ public class DiapasonPickerSelectedDiapason {
     }
 
     boolean resetValues(){
-        return (updateStart(verticalPadding) || updateEnd(viewWidth));
+        boolean updateStartResult = updateStart(verticalPadding);
+        boolean updateEndResult = updateEnd(viewWidth);
+        return (updateStartResult || updateEndResult);
     }
 
     boolean updateStart(float newStart){

@@ -398,6 +398,12 @@ public class ViewChart extends View {
         selectionAnimation.launch();
     }
 
+    public void clearChart() {
+        if(chart != null){
+            setNewSelection(ChartHelper.buildUnselectedList(chart.getGraphsList().size()));
+        }
+    }
+
     class MetricsValues{
         int maxValueY;
         int metricStep;

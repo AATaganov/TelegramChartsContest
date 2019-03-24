@@ -314,6 +314,12 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
         movingStartTime = System.currentTimeMillis();
     }
 
+    public void clearChart() {
+        if(chart != null){
+            setNewSelection(ChartHelper.buildUnselectedList(chart.getGraphsList().size()));
+        }
+    }
+
     public enum TouchedArea {
         START_EDGE,
         END_EDGE,

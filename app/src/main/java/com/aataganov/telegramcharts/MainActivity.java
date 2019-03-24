@@ -6,9 +6,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 import com.aataganov.telegramcharts.adapters.AdapterChartsSelection;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
+import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.AssetsLoader;
 import com.aataganov.telegramcharts.utils.ChartHelper;
@@ -33,11 +36,17 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     RecyclerView recyclerView;
     LinearLayoutManager layoutManager;
 
+    Button btnNext;
+    Button btnPrevious;
+
     AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
 
     BehaviorSubject<List<Boolean>> graphSelectionSubject = BehaviorSubject.create();
     private List<Boolean> selectionList = new ArrayList<>();
     private Chart selectedChart;
+    private BehaviorSubject<Chart> chartSubject = BehaviorSubject.create();
+    private List<Chart> chartsList;
+    private int currentChartIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +54,35 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         setContentView(R.layout.activity_main);
         initViews();
         initRecycler();
+        initButtons();
+    }
+    private void subscribeToChartSelection(){
+        activeBag.add(chartSubject.throttleLatest(1000, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(chart -> {
+                    if(chart != selectedChart){
+                        chartView.clearChart();
+                        chartDiapasonPicker.clearChart();
+                    }
+                    return chart;
+                })
+                .delay(500, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(chart -> {
+                    if(selectedChart != chart){
+                        setNewChart(chart);
+                    }
+                }, error -> {error.printStackTrace();}));
+    }
+
+    private void initButtons() {
+        btnNext.setOnClickListener(v -> {
+            selectChartIndex(currentChartIndex + 1);
+        });
+        btnPrevious.setOnClickListener(v -> {
+            selectChartIndex(currentChartIndex - 1);
+        });
     }
 
     void initViews(){
@@ -52,7 +90,10 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
         chartView.setPicker(chartDiapasonPicker);
         recyclerView = findViewById(R.id.recycler_selection_checkboxes);
+        btnNext = findViewById(R.id.btn_next_chart);
+        btnPrevious = findViewById(R.id.btn_previous_chart);
         initRecycler();
+        initButtons();
     }
 
     void initRecycler() {
@@ -75,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
             activeBag = new CompositeDisposable();
         }
         subscribeToSelectionUpdates();
+        subscribeToChartSelection();
     }
 
     @Override
@@ -92,11 +134,21 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     private void loadCharts(){
         longLiveBag.add(AssetsLoader.loadCharts(this).subscribe(
                 data -> {
-                    Log.w(LOG_TAG,"Data: " + data.toString());
-                    setNewChart(data.get(0));
+                    chartsList = data;
+                    selectChartIndex(0);
                 },
                 Throwable::printStackTrace
         ));
+    }
+
+    private void selectChartIndex(int newIndex) {
+        if(ListHelper.isOutOfBounds(chartsList,newIndex)){
+            return;
+        }
+        currentChartIndex = newIndex;
+        btnPrevious.setEnabled(newIndex > 0);
+        btnNext.setEnabled(newIndex < chartsList.size() - 1);
+        chartSubject.onNext(chartsList.get(newIndex));
     }
 
     private void setNewChart(Chart chart){
@@ -121,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     public void subscribeToSelectionUpdates(){
-        longLiveBag.add(graphSelectionSubject.throttleLatest(600, TimeUnit.MILLISECONDS)
+        activeBag.add(graphSelectionSubject.throttleLatest(600, TimeUnit.MILLISECONDS)
                 .observeOn(Schedulers.computation())
                 .map(selection -> ChartHelper.copySelectionList(selectionList))
                 .subscribeOn(AndroidSchedulers.mainThread())
