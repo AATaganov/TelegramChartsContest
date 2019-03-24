@@ -17,6 +17,8 @@
 
     <dimen name="chart_graph_width">2dp</dimen>
     <dimen name="chart_selection_circle_radius">5dp</dimen>
-    <dimen name="chart_height">250dp</dimen>
-    <dimen name="diapason_picker_height">60dp</dimen>
+    <dimen name="chart_height">210dp</dimen>
+    <dimen name="diapason_picker_height">50dp</dimen>
+    <dimen name="followers_vertical_padding">10dp</dimen>
+    <dimen name="selection_item_height">40dp</dimen>
 </resources>
