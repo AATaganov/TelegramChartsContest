@@ -172,12 +172,15 @@ public class DiapasonPickerSelectedDiapason {
     }
 
     public ViewChartDiapasonPicker.TouchedArea getTouchedArea(float x){
-        float quaterOfSelectedArea = (endEdge.left - startEdge.right) / 4;
+        float selectedAreaEdgePadding = 0;
+        if(endEdge.left - startEdge.right > edgeTouchAreaPadding * 2){
+            selectedAreaEdgePadding = Math.min( 0.15f * (endEdge.left - startEdge.right), edgeTouchAreaPadding);
+        }
         if(x < startEdge.left - edgeTouchAreaPadding || x > endEdge.right + edgeTouchAreaPadding){
             return ViewChartDiapasonPicker.TouchedArea.NONE;
-        } else if(x < Math.min(startEdge.right + edgeTouchAreaPadding, startEdge.right + quaterOfSelectedArea)){
+        } else if(x < startEdge.right + selectedAreaEdgePadding){
             return ViewChartDiapasonPicker.TouchedArea.START_EDGE;
-        } else if(x <= Math.min(endEdge.left - edgeTouchAreaPadding, endEdge.left - quaterOfSelectedArea)){
+        } else if(x <= endEdge.left - selectedAreaEdgePadding){
             return ViewChartDiapasonPicker.TouchedArea.SELECTED_AREA;
         } else {
             return ViewChartDiapasonPicker.TouchedArea.END_EDGE;

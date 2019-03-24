@@ -53,13 +53,10 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     private float startPosition;
     private float touchedAreaStartPosition;
     private boolean animatingTouch = false;
-    private boolean animatingTransition = false;
     private TouchedArea touchedArea;
-    private long movingStartTime;
     private Long animationProgress;
     private float lastShift = 0;
     private PublishSubject<Float> moveShiftSubject = PublishSubject.create();
-//    private BehaviorSubject<>
 
     private Chart chart;
     private Paint graphPaint = new Paint();
@@ -310,7 +307,6 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
         startPosition = event.getX();
         lastShift = 0;
         touchedAreaStartPosition = selectedDiapason.getAreaPosition(touchedArea);
-        movingStartTime = System.currentTimeMillis();
     }
 
     public void clearChart() {
@@ -351,7 +347,6 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     }
 
     private void launchTransitionAnimation(){
-        animatingTransition = true;
         transitionAnimationAlpha = 0;
         CommonHelper.unsubscribeDisposable(transitionAnimationDisposable);
         transitionAnimationDisposable = (Observable.intervalRange(1L, TRANSITION_ANIMATION_FRAME_COUNT,0L,30L, TimeUnit.MILLISECONDS,Schedulers.computation())
@@ -362,11 +357,9 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
                             invalidate();
                         }, error -> {
                             transitionAnimationAlpha = FULL_ALPHA;
-                            animatingTransition = false;
                             error.printStackTrace();
                         }, () -> {
                             transitionAnimationAlpha = FULL_ALPHA;
-                            animatingTransition = false;
                         }
                 ));
     }
