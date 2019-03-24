@@ -12,7 +12,6 @@ import android.view.View;
 import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.helpers.DateHelper;
-import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.helpers.MathHelper;
 import com.aataganov.telegramcharts.models.Chart;
 import com.aataganov.telegramcharts.utils.ChartHelper;
@@ -158,12 +157,12 @@ public class ViewChart extends View {
         if(chart == null) {
             return;
         }
+        ChartDiapason.DrawChartValues chartValues = currentDiapason.getDrawChartValues(getWidth());
         float currentStepY = (float) chartHeight / currentMetricsValues.maxValueY;
-        float currentStepX = (float) getWidth() / currentDiapason.getItemsInDiapason();
         drawMetricsY(canvas, currentStepY);
-        drawChart(canvas, currentStepX, currentStepY);
-        drawDates(currentStepX,canvas);
-        Log.w(LOG_TAG,"DRAW: stepX:" + currentStepX + " items: " + currentDiapason.getItemsInDiapason());
+        drawChart(chartValues.getOffset(), canvas, chartValues.getStep(), currentStepY);
+        drawDates(chartValues.getOffset(), chartValues.getStep(), canvas);
+        Log.w(LOG_TAG,"DRAW: stepX:" + chartValues.getStep() + " items: " + currentDiapason.getItemsInDiapason());
 //        Log.w(LOG_TAG,"DRAW TIME:" + (System.currentTimeMillis() - currtime));
     }
 
@@ -177,7 +176,7 @@ public class ViewChart extends View {
         invalidateRequestsSubject.onNext(true);
     }
 
-    private void drawChart(Canvas canvas, float stepX, float stepY) {
+    private void drawChart(float startOffset, Canvas canvas, float stepX, float stepY) {
         int firstIndex = currentDiapason.getStartIndex();
         int lastIndex = currentDiapason.getEndIndex();
         int graphsSize = chart.getGraphsList().size();
@@ -185,46 +184,47 @@ public class ViewChart extends View {
             Chart.GraphData graph = chart.getGraphsList().get(index);
             List<Integer> selectedValues = graph.getValues().subList(firstIndex, lastIndex + 1);
             if(currentSelection.get(index)) {
-                drawGraph(graph.getColor(), FULL_ALPHA, canvas, selectedValues, stepX, stepY);
+                drawGraph(startOffset, graph.getColor(), FULL_ALPHA, canvas, selectedValues, stepX, stepY);
             }
         }
     }
 
-    private void drawGraph(int color, int alpha, Canvas canvas, List<Integer> values, float stepX, float stepY){
+    private void drawGraph(float startOffset, int color, int alpha, Canvas canvas, List<Integer> values, float stepX, float stepY){
         graphPaint.setColor(color);
         graphPaint.setAlpha(alpha);
         Path path = ChartHelper.buildGraphPath(values, baseLine, stepX, stepY);
+        path.offset(-startOffset,0);
         canvas.drawPath(path,graphPaint);
     }
 
-    private void drawDates(float stepX, Canvas canvas){
+    private void drawDates(float startOffset, float stepX, Canvas canvas){
         metricTextPaint.setAlpha(FULL_ALPHA);
-        int lastIndex = currentDiapason.getEndIndex();
-        int lastIndexShift = DATE_ITEMS_TO_DISPLAY * currentDatesStep;
-        float canvasWidth = canvas.getWidth();
         int startIndex = currentDiapason.getStartIndex();
-        for(int index = chart.getValuesX().size() - 1; index >= startIndex; index-=currentDatesStep){
+        int lastChartIndex = chart.getValuesX().size() - 1;
+        int textPositionY = (canvas.getHeight() + baseLine) / 2;
+        if(lastChartIndex == currentDiapason.getEndIndex()){
+            long date = chart.getValuesX().get(lastChartIndex);
+            drawAtTheEndOfChart(date, canvas, textPositionY);
+        }
+        for(int index = lastChartIndex - currentDatesStep; index >= startIndex; index-=currentDatesStep){
             if(index > currentDiapason.getEndIndex()){
                 continue;
             }
             long date = chart.getValuesX().get(index);
-            drawInMiddleOf(stepX * (index - startIndex),date,canvas,canvasWidth);
+            drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY);
         }
-//        for(int shift = 0; shift <= lastIndexShift; shift+=currentDatesStep){
-//            if(ListHelper.isOutOfBounds(chart.getValuesX(),lastIndex - shift)){
-//                return;
-//            }
-//            long date = chart.getValuesX().get(lastIndex - shift);
-//            drawInMiddleOf(stepX * (lastIndex - shift - currentDiapason.getStartIndex()),date,canvas,canvasWidth);
-////            canvas.drawText(DateHelper.getShortDayString(new Date(date)),canvas.getWidth() - (shift * stepX),canvas.getHeight(),metricTextPaint);
-//        }
     }
-    private void drawInMiddleOf(float xCoordinate, long date, Canvas canvas, float maxX){
+    private void drawInMiddleOf(float xCoordinate, long date, Canvas canvas, int textPositionY){
         String text = DateHelper.getShortDayString(new Date(date));
         float width = metricTextPaint.measureText(text);
-        float textStartX = Math.min(xCoordinate - (width * 0.5f),maxX - width);
-        canvas.drawText(text,textStartX,canvas.getHeight(),metricTextPaint);
-        canvas.drawLine(xCoordinate,0,xCoordinate,baseLine,metricPaint);
+        float textStartX = xCoordinate - (width * 0.5f);
+        canvas.drawText(text,textStartX,textPositionY,metricTextPaint);
+        canvas.drawLine(xCoordinate,0, xCoordinate, baseLine, metricPaint);
+    }
+    private void drawAtTheEndOfChart(long date, Canvas canvas, int textPositionY){
+        String text = DateHelper.getShortDayString(new Date(date));
+        float width = metricTextPaint.measureText(text);
+        canvas.drawText(text,canvas.getWidth() - width, textPositionY, metricTextPaint);
     }
 
     private void drawMetricsY(Canvas canvas, float currentStepY){
@@ -257,7 +257,7 @@ public class ViewChart extends View {
         oldSelection = null;
         currentSelection = selectionList;
         if(currentDiapason == null) {
-            currentDiapason = new ChartDiapason(0, newChart.getValuesX().size() - 1);
+            currentDiapason = new ChartDiapason(0, newChart.getValuesX().size() - 1, 0, 0, getWidth());
         }
         oldDatesStep = 0;
         currentDatesStep = ChartHelper.calculateStep(currentDiapason.getItemsInDiapason(),DATE_ITEMS_TO_DISPLAY);

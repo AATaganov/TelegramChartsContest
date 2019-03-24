@@ -14,6 +14,8 @@ public class DiapasonPickerSelectedDiapason {
     float startCoordinate = -1;
     float endCoordinate = 0;
     float minDistance = 0;
+    float itemWidth;
+    int itemsCount;
     private int viewHeight;
     private int viewWidth;
     private int widthWithoutPadding;
@@ -48,6 +50,8 @@ public class DiapasonPickerSelectedDiapason {
     public void update(StepValues stepValues, View view){
         minDistance = Math.max(stepValues.getStepX() * MIN_DIAPASON_ITEMS_COUNT, DIAPASON_EDGE_SELECTION_WIDTH * 2);
         updateReactsStaticCoordinates(view);
+        itemWidth = ((float) widthWithoutPadding) / stepValues.itemsCount;
+        itemsCount = stepValues.itemsCount;
         resetValues();
     }
 
@@ -191,18 +195,22 @@ public class DiapasonPickerSelectedDiapason {
         return false;
     }
 
-    public ChartDiapason calculateDiapason(int itemsCount){
+    public ChartDiapason calculateDiapason(){
         int startIndex = 0;
-        int endIndex = 0;
+        int endIndex;
+        float startShift = 0f;
+        float endShift = 0f;
         if(startCoordinate > horizontalPadding){
-            startIndex = (int) (((startCoordinate - horizontalPadding) * itemsCount) / widthWithoutPadding);
+            startIndex = (int) (Math.floor((startCoordinate - horizontalPadding) / itemWidth));
+            startShift = startCoordinate - horizontalPadding - (startIndex * itemWidth);
         }
         if(endCoordinate - horizontalPadding < widthWithoutPadding){
-            endIndex = (int) (((endCoordinate - horizontalPadding) * itemsCount) / widthWithoutPadding);
+            endIndex = Math.min(itemsCount - 1,(int) (Math.ceil((endCoordinate - horizontalPadding) / itemWidth)));
+            endShift = (endIndex * itemWidth) - (endCoordinate - horizontalPadding);
         } else {
             endIndex = itemsCount - 1;
         }
-        return new ChartDiapason(startIndex, endIndex);
+        return new ChartDiapason(startIndex, endIndex, startShift, endShift, endCoordinate - startCoordinate);
 
     }
 }

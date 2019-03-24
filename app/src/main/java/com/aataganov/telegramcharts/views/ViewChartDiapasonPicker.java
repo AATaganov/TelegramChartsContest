@@ -268,12 +268,12 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     }
 
     private void subscribeToShiftChanges(){
-        viewBag.add(moveShiftSubject.subscribeOn(Schedulers.computation())
+        viewBag.add(moveShiftSubject.subscribeOn(Schedulers.io())
                 .map(shift -> selectedDiapason.moveToNewPosition(touchedArea, touchedAreaStartPosition - shift))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     if(result){
-                        selectedDiapasonSubject.onNext(selectedDiapason.calculateDiapason(chart.getValuesX().size()));
+                        selectedDiapasonSubject.onNext(selectedDiapason.calculateDiapason());
                     }
                     if(result && !animatingTouch){
                         postInvalidate();

@@ -16,6 +16,7 @@ public class StepValues {
     private float yCenter = 0f;
     int verticalPadding;
     int horizontalPadding;
+    int itemsCount;
     private int heightWithoutPadding;
 
     public StepValues(int verticalPadding, int horizontalPadding) {
@@ -27,9 +28,10 @@ public class StepValues {
         if(chart == null){
             return;
         }
+        itemsCount = chart.getValuesX().size();
         int widthWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getWidth(), horizontalPadding);
         heightWithoutPadding = CommonHelper.calculateSizeWithPadding(view.getHeight(), verticalPadding);
-        stepX = ((float) widthWithoutPadding) / chart.getValuesX().size();
+        stepX = ((float) widthWithoutPadding) / itemsCount;
         long maxY = ChartHelper.calculateMaxY(chart);
         stepY = ((float) heightWithoutPadding) / maxY;
         stepYOld = stepY;
