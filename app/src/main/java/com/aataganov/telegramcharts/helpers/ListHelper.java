@@ -1,7 +1,5 @@
 package com.aataganov.telegramcharts.helpers;
 
-import android.widget.BaseAdapter;
-
 import java.util.List;
 
 public class ListHelper {

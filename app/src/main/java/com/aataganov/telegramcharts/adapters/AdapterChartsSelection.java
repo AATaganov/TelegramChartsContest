@@ -12,8 +12,6 @@ import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
 
-import org.w3c.dom.Text;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +19,7 @@ import java.util.List;
 public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<Chart.GraphData> dataList = new ArrayList<>();
     private List<Boolean> selectionList = new ArrayList<>();
-    WeakReference<SelectionListener> weakListener;
+    private WeakReference<SelectionListener> weakListener;
 
     public void setSelectionListener(SelectionListener listener) {
         weakListener = new WeakReference<>(listener);
@@ -58,7 +56,7 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
         private final CheckBox checkBox;
         private final TextView txtTitle;
         private final View divider;
-        public SelectionCheckboxViewHolder(@NonNull View itemView) {
+        SelectionCheckboxViewHolder(@NonNull View itemView) {
             super(itemView);
             checkBox = itemView.findViewById(R.id.checkbox);
             txtTitle = itemView.findViewById(R.id.txt_title);
@@ -70,7 +68,7 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
             });
         }
 
-        public void update(int position){
+        void update(int position){
             Chart.GraphData item = dataList.get(position);
             CommonHelper.updateCheckboxColor(item.getColor(), checkBox);
             checkBox.setChecked(selectionList.get(position));

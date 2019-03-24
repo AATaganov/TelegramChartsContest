@@ -7,11 +7,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 
 import com.aataganov.telegramcharts.adapters.AdapterChartsSelection;
@@ -44,7 +41,6 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
 
     Button btnNext;
     Button btnPrevious;
-//    Toolbar toolbar;
 
     AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
 
@@ -77,14 +73,12 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     private void initToolbar(){
-//        setSupportActionBar(toolbar);
         if(getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.activity_title);
         }
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main_activity_menu, menu);
         return true;
     }
@@ -125,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
                     if(selectedChart != chart){
                         setNewChart(chart);
                     }
-                }, error -> {error.printStackTrace();}));
+                }, Throwable::printStackTrace));
     }
 
     private void initButtons() {
@@ -138,7 +132,6 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     void initViews(){
-//        toolbar = findViewById(R.id.toolbar);
         chartView = findViewById(R.id.chart_view);
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
         chartView.setPicker(chartDiapasonPicker);
@@ -234,6 +227,6 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
                     chartDiapasonPicker.setNewSelection(res);
                     chartView.setNewSelection(res);
 
-                }, error -> {error.printStackTrace();}));
+                }, Throwable::printStackTrace));
     }
 }

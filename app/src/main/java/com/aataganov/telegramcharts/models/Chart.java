@@ -9,18 +9,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class Chart {
-    List<Long> valuesX;
-    List<GraphData> graphsList;
-    int maxY;
+    private List<Long> valuesX;
+    private List<GraphData> graphsList;
+    private int maxY;
 
     public Chart(List<Long> xValues, List<GraphData> graphs) {
         valuesX = xValues;
         graphsList = graphs;
         maxY = ChartHelper.calculateMaxY(this);
-    }
-
-    public int getMaxY() {
-        return maxY;
     }
 
     public List<Long> getValuesX() {

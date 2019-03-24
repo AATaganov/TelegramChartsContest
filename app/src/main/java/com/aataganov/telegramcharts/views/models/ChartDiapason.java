@@ -36,14 +36,6 @@ public class ChartDiapason {
         return itemsInDiapason;
     }
 
-    public float getStartShift() {
-        return startShift;
-    }
-
-    public float getEndShift() {
-        return endShift;
-    }
-
     public int getItemsCount() {
         return itemsCount;
     }

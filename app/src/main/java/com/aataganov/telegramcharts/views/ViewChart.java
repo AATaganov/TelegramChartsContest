@@ -1,7 +1,6 @@
 package com.aataganov.telegramcharts.views;
 
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -198,9 +197,6 @@ public class ViewChart extends View {
         metricTextPaint.setAntiAlias(true);
         metricTextPaint.setColor(Color.GRAY);
 
-//        selectionCardDatePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-//        selectionCardValuePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-
         selectionCardDatePaint.setTextSize(chartSelectionCardDateTextSize);
         selectionCardNamePaint.setTextSize(chartSelectionCardNameTextSize);
         selectionCardValuePaint.setTextSize(chartSelectionCardValuesTextSize);
@@ -217,6 +213,7 @@ public class ViewChart extends View {
         selectionCardBackgroundPaint.setColor(backgroundColor);
         selectionCardBackgroundPaint.setShadowLayer(0.5f * stokeWidth , 0, 0, Color.GRAY);
         selectionCardBackgroundPaint.setAntiAlias(true);
+        setLayerType(LAYER_TYPE_SOFTWARE, selectionCardBackgroundPaint);
     }
 
     @Override

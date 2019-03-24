@@ -5,9 +5,6 @@ public class MathHelper {
     public static boolean isInRange(float value, float range){
         return (value <= range && value >= -range);
     }
-    public static boolean isOutOfRange(float value, float range){
-        return (value > range || value < -range);
-    }
 
     public static boolean isInRange(int value, int start, int end){
         return (value >= start && value <= end);
