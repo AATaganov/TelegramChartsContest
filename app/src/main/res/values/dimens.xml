@@ -3,10 +3,12 @@
     <dimen name="diapason_selection_edge_width">5dp</dimen>
     <dimen name="diapason_selection_edge_height">1dp</dimen>
     <dimen name="diapason_selection_touch_sensibility">20dp</dimen>
-    <dimen name="diapason_selection_vertical_padding">20dp</dimen>
+    <dimen name="diapason_selection_vertical_padding">10dp</dimen>
     <dimen name="diapason_selection_horizontal_padding">16dp</dimen>
 
-    <dimen name="chart_vertical_padding">30dp</dimen>
+    <dimen name="chart_vertical_padding">16dp</dimen>
     <dimen name="chart_metric_text_padding">5dp</dimen>
     <dimen name="chart_metric_text_size">10sp</dimen>
+
+    <dimen name="chart_graph_width">2dp</dimen>
 </resources>

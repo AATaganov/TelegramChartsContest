@@ -57,6 +57,7 @@ public class ViewChart extends View {
     int verticalPadding;
     int metricTextPadding;
     int baseLine = 0;
+    int datesTextBaseline = 0;
     int chartHeight = 0;
 
     MetricsValues currentMetricsValues;
@@ -192,6 +193,7 @@ public class ViewChart extends View {
         if(currentMetricsValues != null){
             currentMetricsValues = new MetricsValues(currentMetricsValues.maxValueY, chartHeight);
         }
+        datesTextBaseline = (int) (heightNew - ((float) verticalPadding * 0.2f));
     }
     private void requestInvalidation(){
         invalidateRequestsSubject.onNext(true);
@@ -233,10 +235,9 @@ public class ViewChart extends View {
         metricTextPaint.setAlpha(FULL_ALPHA);
         int startIndex = currentDiapason.getStartIndex();
         int lastChartIndex = chart.getValuesX().size() - 1;
-        int textPositionY = (canvas.getHeight() + baseLine) / 2;
         if(lastChartIndex == currentDiapason.getEndIndex()){
             long date = chart.getValuesX().get(lastChartIndex);
-            drawAtTheEndOfChart(date, canvas, textPositionY);
+            drawAtTheEndOfChart(date, canvas, datesTextBaseline);
         }
         if(datesAnimation.alpha == FULL_ALPHA || oldDatesStep == 0){
             drawJustCurrentDates(lastChartIndex, startIndex, stepX, startOffset, canvas, datesAnimation.alpha);
@@ -246,17 +247,16 @@ public class ViewChart extends View {
     }
     private void drawJustCurrentDates(int lastChartIndex, int startIndex, float stepX, float startOffset, Canvas canvas, int alpha){
         metricTextPaint.setAlpha(FULL_ALPHA);
-        int textPositionY = (canvas.getHeight() + baseLine) / 2;
         for(int index = lastChartIndex - currentDatesStep; index >= startIndex; index-=currentDatesStep){
             if(index > currentDiapason.getEndIndex()){
                 continue;
             }
             long date = chart.getValuesX().get(index);
-            drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, alpha);
+            drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, datesTextBaseline, alpha);
         }
     }
+
     private void drawTransitionDates(int lastChartIndex, int startIndex, float stepX, float startOffset, Canvas canvas){
-        int textPositionY = (canvas.getHeight() + baseLine) / 2;
         int minStep = Math.min(currentDatesStep, oldDatesStep);
         for(int shift = minStep; shift < lastChartIndex; shift+=minStep){
             int index = lastChartIndex - shift;
@@ -268,11 +268,11 @@ public class ViewChart extends View {
             }
             long date = chart.getValuesX().get(index);
             if(ChartHelper.isShiftInStepsArray(shift, currentDatesStep) && ChartHelper.isShiftInStepsArray(shift,oldDatesStep)){
-                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA);
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, datesTextBaseline, FULL_ALPHA);
             } else if (ChartHelper.isShiftInStepsArray(shift, currentDatesStep)){
-                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, datesAnimation.alpha);
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, datesTextBaseline, datesAnimation.alpha);
             } else {
-                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA - datesAnimation.alpha);
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, datesTextBaseline, FULL_ALPHA - datesAnimation.alpha);
             }
         }
     }
