@@ -75,7 +75,7 @@ public class Chart {
                 continue;
             }
             List<Integer> graphValues = graphsList.get(graphIndex).getValues();
-            for(int index = 0; index < endIndex; ++index){
+            for(int index = diapason.getStartIndex(); index < endIndex; ++index){
                 if(result < graphValues.get(index)){
                     result = graphValues.get(index);
                 }

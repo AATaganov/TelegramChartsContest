@@ -33,6 +33,8 @@ import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
 
 public class ViewChart extends View {
     public static final int Y_TRANSITION_ANIMATION_FRAME_COUNT = 15;
+    public static final int DEFAULT_ANIMATION_FRAME_COUNT = 15;
+    public static final long DEFAULT_ANIMATION_STEP = 25L;
     private static final int METRICS_ITEMS_TO_DISPLAY = 5;
     private static final int DATE_ITEMS_TO_DISPLAY = 5;
     private static final String LOG_TAG = ViewChart.class.getSimpleName();
@@ -57,18 +59,20 @@ public class ViewChart extends View {
     int chartHeight = 0;
 
     int transitionAlphaY = FULL_ALPHA;
+    int datesTransitionAlpha = FULL_ALPHA;
 
-    MetricsValues currentMetricsValues = new MetricsValues(0);
+    MetricsValues currentMetricsValues;
     MetricsValues oldMetricValues;
 
     private CompositeDisposable viewBag = new CompositeDisposable();
     private Disposable transitionAnimationDisposable;
     private Disposable yTransitionAnimationDisposable;
+    private Disposable datesAnimationDisposable;
     private DiapasonPicker diapasonPicker;
     private Disposable selectedDiapasonDisposable;
     private PublishSubject<Boolean> invalidateRequestsSubject = PublishSubject.create();
     private PublishSubject<Integer> maxYSubject = PublishSubject.create();
-    private PublishSubject<Integer> dateStep = PublishSubject.create();
+    private PublishSubject<Integer> dateStepSubject = PublishSubject.create();
 
     public ViewChart(Context context) {
         super(context);
@@ -100,6 +104,7 @@ public class ViewChart extends View {
         }
         subscribeToInvalidateEvents();
         subscibeToNewMaxYEvents();
+        subscribeTonewDatesEvents();
     }
 
     private void subscribeToInvalidateEvents(){
@@ -115,13 +120,22 @@ public class ViewChart extends View {
                 .subscribe(newMaxY -> {
                     if(currentMetricsValues == null || currentMetricsValues.maxValueY != newMaxY) {
                         oldMetricValues = currentMetricsValues;
-                        currentMetricsValues = new MetricsValues(newMaxY);
+                        currentMetricsValues = new MetricsValues(newMaxY, chartHeight);
                         launchMetricTransition();
                     }
                 }, Throwable::printStackTrace));
     }
     private void subscribeTonewDatesEvents(){
-
+        viewBag.add(dateStepSubject
+                .throttleLatest(250, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .subscribe(newStep -> {
+                    if(currentDatesStep != newStep) {
+                        oldDatesStep = currentDatesStep;
+                        currentDatesStep = newStep;
+                        launchDatesTransition();
+                    }
+                }, Throwable::printStackTrace));
     }
 
     @Override
@@ -152,25 +166,35 @@ public class ViewChart extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        long currtime = System.currentTimeMillis();
         canvas.drawColor(Color.WHITE);
         if(chart == null) {
             return;
         }
         ChartDiapason.DrawChartValues chartValues = currentDiapason.getDrawChartValues(getWidth());
-        float currentStepY = (float) chartHeight / currentMetricsValues.maxValueY;
+        float currentStepY = calculateTransitionY();
         drawMetricsY(canvas, currentStepY);
         drawChart(chartValues.getOffset(), canvas, chartValues.getStep(), currentStepY);
         drawDates(chartValues.getOffset(), chartValues.getStep(), canvas);
-        Log.w(LOG_TAG,"DRAW: stepX:" + chartValues.getStep() + " items: " + currentDiapason.getItemsInDiapason());
-//        Log.w(LOG_TAG,"DRAW TIME:" + (System.currentTimeMillis() - currtime));
     }
+    private float calculateTransitionY(){
+        if(currentMetricsValues == null){
+            return 0;
+        }
+        if(transitionAlphaY == FULL_ALPHA || oldMetricValues == null){
+            return currentMetricsValues.yStep;
+        }
+        return ChartHelper.calculateTransitionStep(transitionAlphaY, currentMetricsValues.yStep, oldMetricValues.yStep);
+    }
+
 
     @Override
     protected void onSizeChanged(int widthNew, int heightNew, int oldw, int oldh) {
         super.onSizeChanged(widthNew, heightNew, oldw, oldh);
         baseLine = heightNew - verticalPadding;
         chartHeight = Math.max(baseLine - verticalPadding, 0);
+        if(currentMetricsValues != null){
+            currentMetricsValues = new MetricsValues(currentMetricsValues.maxValueY, chartHeight);
+        }
     }
     private void requestInvalidation(){
         invalidateRequestsSubject.onNext(true);
@@ -206,29 +230,64 @@ public class ViewChart extends View {
             long date = chart.getValuesX().get(lastChartIndex);
             drawAtTheEndOfChart(date, canvas, textPositionY);
         }
+        if(datesTransitionAlpha == FULL_ALPHA || oldDatesStep == 0){
+            drawJustCurrentDates(lastChartIndex, startIndex, stepX, startOffset, canvas, datesTransitionAlpha);
+        } else {
+            drawTransitionDates(lastChartIndex,startIndex,stepX,startOffset,canvas);
+        }
+    }
+    private void drawJustCurrentDates(int lastChartIndex, int startIndex, float stepX, float startOffset, Canvas canvas, int alpha){
+        metricTextPaint.setAlpha(FULL_ALPHA);
+        int textPositionY = (canvas.getHeight() + baseLine) / 2;
         for(int index = lastChartIndex - currentDatesStep; index >= startIndex; index-=currentDatesStep){
             if(index > currentDiapason.getEndIndex()){
                 continue;
             }
             long date = chart.getValuesX().get(index);
-            drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY);
+            drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, alpha);
         }
     }
-    private void drawInMiddleOf(float xCoordinate, long date, Canvas canvas, int textPositionY){
+    private void drawTransitionDates(int lastChartIndex, int startIndex, float stepX, float startOffset, Canvas canvas){
+        int textPositionY = (canvas.getHeight() + baseLine) / 2;
+        int minStep = Math.min(currentDatesStep, oldDatesStep);
+        for(int shift = minStep; shift < lastChartIndex; shift+=minStep){
+            int index = lastChartIndex - shift;
+            if(index > currentDiapason.getEndIndex()){
+                continue;
+            }
+            if(index < currentDiapason.getStartIndex()){
+                break;
+            }
+            long date = chart.getValuesX().get(index);
+            if(ChartHelper.isShiftInStepsArray(shift, currentDatesStep) && ChartHelper.isShiftInStepsArray(shift,oldDatesStep)){
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA);
+            } else if (ChartHelper.isShiftInStepsArray(shift, currentDatesStep)){
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, datesTransitionAlpha);
+            } else {
+                drawInMiddleOf(stepX * (index - startIndex) - startOffset, date, canvas, textPositionY, FULL_ALPHA - datesTransitionAlpha);
+            }
+        }
+    }
+
+    private void drawInMiddleOf(float xCoordinate, long date, Canvas canvas, int textPositionY, int alpha){
+        metricTextPaint.setAlpha(alpha);
         String text = DateHelper.getShortDayString(new Date(date));
         float width = metricTextPaint.measureText(text);
         float textStartX = xCoordinate - (width * 0.5f);
         canvas.drawText(text,textStartX,textPositionY,metricTextPaint);
-        canvas.drawLine(xCoordinate,0, xCoordinate, baseLine, metricPaint);
     }
     private void drawAtTheEndOfChart(long date, Canvas canvas, int textPositionY){
+        if(oldDatesStep == 0){
+            metricTextPaint.setAlpha(datesTransitionAlpha);
+        } else {
+            metricTextPaint.setAlpha(FULL_ALPHA);
+        }
         String text = DateHelper.getShortDayString(new Date(date));
         float width = metricTextPaint.measureText(text);
         canvas.drawText(text,canvas.getWidth() - width, textPositionY, metricTextPaint);
     }
 
     private void drawMetricsY(Canvas canvas, float currentStepY){
-        Log.w(LOG_TAG," DRAW METRICS:" + transitionAlphaY);
         drawMetricsY(canvas,currentStepY, transitionAlphaY);
         if(transitionAlphaY < FULL_ALPHA && oldMetricValues != null){
             float oldStepY = (float) chartHeight / oldMetricValues.maxValueY;
@@ -262,7 +321,7 @@ public class ViewChart extends View {
         oldDatesStep = 0;
         currentDatesStep = ChartHelper.calculateStep(currentDiapason.getItemsInDiapason(),DATE_ITEMS_TO_DISPLAY);
         oldMetricValues = currentMetricsValues;
-        currentMetricsValues = new MetricsValues(newChart.getMaxY(currentDiapason,currentSelection));
+        currentMetricsValues = new MetricsValues(newChart.getMaxY(currentDiapason,currentSelection), chartHeight);
         requestInvalidation();
     }
 
@@ -308,7 +367,10 @@ public class ViewChart extends View {
     }
     private void updateDatesSteps(){
         if(oldDiapason == null || currentDiapason.getItemsInDiapason() != oldDiapason.getItemsInDiapason()){
-            currentDatesStep = ChartHelper.calculateStep(currentDiapason.getItemsInDiapason(),DATE_ITEMS_TO_DISPLAY);
+            int newStep = ChartHelper.calculateStep(currentDiapason.getItemsInDiapason(), DATE_ITEMS_TO_DISPLAY);
+            if(currentDatesStep != newStep){
+                dateStepSubject.onNext(newStep);
+            }
         }
     }
 
@@ -319,7 +381,7 @@ public class ViewChart extends View {
                 .map(lvl -> ChartHelper.calculateTransitionAlpha(lvl, Y_TRANSITION_ANIMATION_FRAME_COUNT))
                 .subscribe(res -> {
                             transitionAlphaY = res;
-                    Log.w(LOG_TAG,"TransitionAlpha:" +transitionAlphaY);
+                            Log.w(LOG_TAG,"TransitionAlpha:" +transitionAlphaY);
                             requestInvalidation();
                         }, error -> {
                             transitionAlphaY = FULL_ALPHA;
@@ -331,13 +393,32 @@ public class ViewChart extends View {
                 ));
     }
 
+    private void launchDatesTransition() {
+        CommonHelper.unsubscribeDisposable(datesAnimationDisposable);
+        datesTransitionAlpha = FULL_ALPHA;
+        datesAnimationDisposable = (Observable.intervalRange(1L, DEFAULT_ANIMATION_FRAME_COUNT,0L,DEFAULT_ANIMATION_STEP, TimeUnit.MILLISECONDS,Schedulers.io())
+                .map(lvl -> ChartHelper.calculateTransitionAlpha(lvl, DEFAULT_ANIMATION_FRAME_COUNT))
+                .subscribe(res -> {
+                            datesTransitionAlpha = res;
+                            requestInvalidation();
+                        }, error -> {
+                            datesTransitionAlpha = FULL_ALPHA;
+                            requestInvalidation();
+                            error.printStackTrace();
+                        }, () -> {
+                            datesTransitionAlpha = FULL_ALPHA;
+                        }
+                ));
+    }
 
     class MetricsValues{
         int maxValueY;
-        int metricStep = 0;
+        int metricStep;
+        float yStep;
 
-        public MetricsValues(int maxValueY) {
+        MetricsValues(int maxValueY, int chartHeight) {
             this.maxValueY = maxValueY;
+            yStep = (float) chartHeight / maxValueY;
             metricStep = MathHelper.floorNumberToFirstToDigits(maxValueY) / METRICS_ITEMS_TO_DISPLAY;
         }
     }

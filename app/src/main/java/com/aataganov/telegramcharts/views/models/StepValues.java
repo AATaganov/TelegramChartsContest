@@ -56,11 +56,6 @@ public class StepValues {
         stepY = ((float) heightWithoutPadding) / newMaxY;
     }
     public float calculateTransitionStep(int transitionAlpha){
-        if(transitionAlpha == Constants.FULL_ALPHA || stepYOld == stepY){
-            return stepY;
-        }
-        float difference = stepY - stepYOld;
-        float result = stepYOld + (difference * ((float) transitionAlpha / Constants.FULL_ALPHA));
-        return result;
+        return ChartHelper.calculateTransitionStep(transitionAlpha,stepY, stepYOld);
     }
 }

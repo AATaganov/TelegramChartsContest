@@ -2,6 +2,7 @@ package com.aataganov.telegramcharts.utils;
 
 import android.graphics.Path;
 
+import com.aataganov.telegramcharts.helpers.Constants;
 import com.aataganov.telegramcharts.models.Chart;
 
 import java.util.ArrayList;
@@ -99,6 +100,19 @@ public class ChartHelper {
         while (stepsCount * result < itemsCount){
             result *= 2;
         }
+        return result;
+    }
+
+    public static boolean isShiftInStepsArray(int shift, int step){
+        return (shift % step == 0);
+    }
+
+    public static float calculateTransitionStep(int transitionAlpha, float newStep, float oldStep) {
+        if(transitionAlpha == Constants.FULL_ALPHA || oldStep == newStep){
+            return newStep;
+        }
+        float difference = newStep - oldStep;
+        float result = oldStep + (difference * ((float) transitionAlpha / Constants.FULL_ALPHA));
         return result;
     }
 }
