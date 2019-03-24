@@ -82,7 +82,11 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
         subscribeToShiftChanges();
         verticalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_vertical_padding);
         horizontalPadding = context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_horizontal_padding);
-        selectedDiapason = new DiapasonPickerSelectedDiapason(context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width), verticalPadding, horizontalPadding);
+        selectedDiapason = new DiapasonPickerSelectedDiapason(
+                context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_width),
+                context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_edge_height),
+                context.getResources().getDimensionPixelSize(R.dimen.diapason_selection_touch_sensibility),
+                verticalPadding, horizontalPadding);
         stepValues = new StepValues(verticalPadding, horizontalPadding);
         initPaints();
     }
@@ -231,6 +235,8 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
         Path path = new Path();
         path.addRect(selectedDiapason.getStartEdge(), Path.Direction.CW);
         path.addRect(selectedDiapason.getEndEdge(), Path.Direction.CW);
+        path.addRect(selectedDiapason.getTopEdge(), Path.Direction.CW);
+        path.addRect(selectedDiapason.getBottomEdge(), Path.Direction.CW);
         path.close();
         canvas.drawPath(path,diapasonEdgesPaint);
     }

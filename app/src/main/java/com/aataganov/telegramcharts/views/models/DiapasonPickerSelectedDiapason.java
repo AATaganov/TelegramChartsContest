@@ -8,6 +8,7 @@ import com.aataganov.telegramcharts.views.ViewChartDiapasonPicker;
 public class DiapasonPickerSelectedDiapason {
     private static final int MIN_DIAPASON_ITEMS_COUNT = 5;
     final int DIAPASON_EDGE_SELECTION_WIDTH;
+    final int DIAPASON_EDGE_SELECTION_HEIGHT;
     final float edgeTouchAreaPadding;
     private int verticalPadding;
     private int horizontalPadding;
@@ -23,6 +24,8 @@ public class DiapasonPickerSelectedDiapason {
     RectF endSkip = new RectF();
     RectF startEdge = new RectF();
     RectF endEdge = new RectF();
+    RectF topEdge = new RectF();
+    RectF bottomEdge = new RectF();
 
     public RectF getStartSkip() {
         return startSkip;
@@ -40,9 +43,21 @@ public class DiapasonPickerSelectedDiapason {
         return endEdge;
     }
 
-    public DiapasonPickerSelectedDiapason(int edgeWidth, int verticalPadding, int horizontalPadding) {
+    public RectF getTopEdge() {
+        return topEdge;
+    }
+
+    public RectF getBottomEdge() {
+        return bottomEdge;
+    }
+
+    public DiapasonPickerSelectedDiapason(int edgeWidth, int edgeHeight,
+                                          int touchSensibility,
+                                          int verticalPadding,
+                                          int horizontalPadding) {
         this.DIAPASON_EDGE_SELECTION_WIDTH = edgeWidth;
-        this.edgeTouchAreaPadding = edgeWidth * 0.8f;
+        this.DIAPASON_EDGE_SELECTION_HEIGHT = edgeHeight;
+        this.edgeTouchAreaPadding = touchSensibility;
         this.verticalPadding = verticalPadding;
         this.horizontalPadding = horizontalPadding;
     }
@@ -125,12 +140,16 @@ public class DiapasonPickerSelectedDiapason {
         startSkip.left = horizontalPadding;
         startEdge.top = verticalPadding;
         startSkip.top = verticalPadding;
+        topEdge.top = verticalPadding;
+        topEdge.bottom = verticalPadding + DIAPASON_EDGE_SELECTION_HEIGHT;
         endSkip.top = verticalPadding;
         endEdge.top = verticalPadding;
         startEdge.bottom = bottomCoordinate;
         startSkip.bottom = bottomCoordinate;
         endSkip.bottom = bottomCoordinate;
         endEdge.bottom = bottomCoordinate;
+        bottomEdge.bottom = bottomCoordinate;
+        bottomEdge.top = bottomCoordinate - DIAPASON_EDGE_SELECTION_HEIGHT;
         endSkip.right = viewWidth - horizontalPadding;
     }
     void recalculateStartReacts(){
@@ -138,12 +157,16 @@ public class DiapasonPickerSelectedDiapason {
         startSkip.right = startEdgeLeft;
         startEdge.left = startEdgeLeft;
         startEdge.right = startEdgeLeft + DIAPASON_EDGE_SELECTION_WIDTH;
+        topEdge.left = startEdge.right;
+        bottomEdge.left = topEdge.left;
     }
     void recalculateEndReacts(){
         float endEdgeRight = Math.min(endSkip.right, endCoordinate);
         endSkip.left = endEdgeRight;
         endEdge.right = endEdgeRight;
         endEdge.left = endEdgeRight - DIAPASON_EDGE_SELECTION_WIDTH;
+        topEdge.right = endEdge.left;
+        bottomEdge.right = topEdge.right;
     }
 
     public ViewChartDiapasonPicker.TouchedArea getTouchedArea(float x){
