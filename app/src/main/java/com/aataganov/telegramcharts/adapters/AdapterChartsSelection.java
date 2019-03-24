@@ -27,6 +27,7 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
     public void updateData(List<Chart.GraphData> newList,List<Boolean> newSelectionList){
         dataList = newList;
         selectionList = newSelectionList;
+        notifyDataSetChanged();
     }
 
     @NonNull
