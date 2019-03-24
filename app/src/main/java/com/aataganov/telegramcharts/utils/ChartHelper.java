@@ -90,4 +90,15 @@ public class ChartHelper {
         }
         return (int) (FULL_ALPHA * lvl / maxCount);
     }
+
+    public static int calculateStep(int itemsCount, int stepsCount){
+        if(itemsCount <= stepsCount){
+            return 1;
+        }
+        int result = 2;
+        while (stepsCount * result < itemsCount){
+            result *= 2;
+        }
+        return result;
+    }
 }

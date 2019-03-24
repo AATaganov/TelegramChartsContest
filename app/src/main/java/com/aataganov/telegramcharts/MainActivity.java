@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         longLiveBag.add(AssetsLoader.loadCharts(this).subscribe(
                 data -> {
                     Log.w(LOG_TAG,"Data: " + data.toString());
-                    setNewChart(data.get(3));
+                    setNewChart(data.get(0));
                 },
                 Throwable::printStackTrace
         ));
