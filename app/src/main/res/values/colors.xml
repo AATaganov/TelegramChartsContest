@@ -5,4 +5,8 @@
     <color name="colorAccent">#3896d4</color>
     <color name="material_grey">#6e6e6e</color>
     <color name="colorWhite">#FFF</color>
+    <color name="colorBackground">#fff</color>
+    <color name="colorRecyclerBackground">#f0f0f0</color>
+
+    <color name="line_color">#e0e0e0</color>
 </resources>

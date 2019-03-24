@@ -1,8 +1,10 @@
 package com.aataganov.telegramcharts;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -16,6 +18,7 @@ import com.aataganov.telegramcharts.adapters.AdapterChartsSelection;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.helpers.ListHelper;
 import com.aataganov.telegramcharts.models.Chart;
+import com.aataganov.telegramcharts.singletons.Settings;
 import com.aataganov.telegramcharts.utils.AssetsLoader;
 import com.aataganov.telegramcharts.utils.ChartHelper;
 import com.aataganov.telegramcharts.views.ViewChart;
@@ -41,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
 
     Button btnNext;
     Button btnPrevious;
-    Toolbar toolbar;
+//    Toolbar toolbar;
 
     AdapterChartsSelection adapterChartsSelection = new AdapterChartsSelection();
 
@@ -54,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        updateActivityTheme();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
@@ -61,8 +65,19 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         initButtons();
         initToolbar();
     }
+    private void updateActivityTheme(){
+        Settings settings = Settings.getInstance(getApplication());
+        if(settings.isNightModeOn()) {
+            AppCompatDelegate.setDefaultNightMode(
+                    AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(
+                    AppCompatDelegate.MODE_NIGHT_NO);
+        }
+    }
+
     private void initToolbar(){
-        setSupportActionBar(toolbar);
+//        setSupportActionBar(toolbar);
         if(getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.activity_title);
         }
@@ -72,6 +87,11 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main_activity_menu, menu);
         return true;
+    }
+    public void restart(){
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     @Override
@@ -84,7 +104,8 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     private void switchTheme() {
-        Log.w(LOG_TAG,"SWITCH THEME CLICKED");
+        Settings.getInstance(getApplication()).changeNightMode();
+        restart();
     }
 
     private void subscribeToChartSelection(){
@@ -117,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements AdapterChartsSele
     }
 
     void initViews(){
-        toolbar = findViewById(R.id.toolbar);
+//        toolbar = findViewById(R.id.toolbar);
         chartView = findViewById(R.id.chart_view);
         chartDiapasonPicker = findViewById(R.id.view_diapason_picker);
         chartView.setPicker(chartDiapasonPicker);

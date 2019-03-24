@@ -34,6 +34,7 @@ import io.reactivex.subjects.PublishSubject;
 
 import static com.aataganov.telegramcharts.helpers.Constants.FULL_ALPHA;
 import static com.aataganov.telegramcharts.helpers.Constants.HALF_ALPHA;
+import static com.aataganov.telegramcharts.helpers.Constants.QUATER_ALPHA;
 
 public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonPicker {
     public static final int ANIMATION_FRAME_COUNT = 10;
@@ -66,6 +67,7 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     private Disposable touchAnimationDisposable;
     private Disposable transitionAnimationDisposable;
     private boolean isMovingDiapason = false;
+    int backgroundColor;
 
     public ViewChartDiapasonPicker(Context context) {
         super(context);
@@ -141,21 +143,23 @@ public class ViewChartDiapasonPicker extends View implements ViewChart.DiapasonP
     }
 
     private void initPaints(){
+        backgroundColor = getResources().getColor(R.color.colorBackground);
         graphPaint.setAntiAlias(true);
         graphPaint.setStrokeWidth(3);
         graphPaint.setStyle(Paint.Style.STROKE);
         diapasonEdgesPaint.setStyle(Paint.Style.FILL);
-        diapasonEdgesPaint.setColor(Color.DKGRAY);
+        diapasonEdgesPaint.setColor(Color.LTGRAY);
         diapasonEdgesPaint.setAlpha(HALF_ALPHA);
+
         diapasonSkipPaint.setStyle(Paint.Style.FILL);
         diapasonSkipPaint.setColor(Color.LTGRAY);
-        diapasonSkipPaint.setAlpha(HALF_ALPHA);
+        diapasonSkipPaint.setAlpha(QUATER_ALPHA);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(backgroundColor);
         if(chart == null){
             return;
         }

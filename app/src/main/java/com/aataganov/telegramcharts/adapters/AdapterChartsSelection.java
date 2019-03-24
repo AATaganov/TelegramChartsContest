@@ -6,10 +6,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.TextView;
 
 import com.aataganov.telegramcharts.R;
 import com.aataganov.telegramcharts.helpers.CommonHelper;
 import com.aataganov.telegramcharts.models.Chart;
+
+import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -53,9 +56,13 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
     private class SelectionCheckboxViewHolder extends RecyclerView.ViewHolder{
 
         private final CheckBox checkBox;
+        private final TextView txtTitle;
+        private final View divider;
         public SelectionCheckboxViewHolder(@NonNull View itemView) {
             super(itemView);
             checkBox = itemView.findViewById(R.id.checkbox);
+            txtTitle = itemView.findViewById(R.id.txt_title);
+            divider = itemView.findViewById(R.id.view_divider);
             checkBox.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 weakListener.get().onSelectionChanged(position);
@@ -67,7 +74,8 @@ public class AdapterChartsSelection extends RecyclerView.Adapter<RecyclerView.Vi
             Chart.GraphData item = dataList.get(position);
             CommonHelper.updateCheckboxColor(item.getColor(), checkBox);
             checkBox.setChecked(selectionList.get(position));
-            checkBox.setText(item.getName());
+            txtTitle.setText(item.getName());
+            CommonHelper.updateViewVisibility(divider,position < dataList.size() - 1);
         }
     }
 

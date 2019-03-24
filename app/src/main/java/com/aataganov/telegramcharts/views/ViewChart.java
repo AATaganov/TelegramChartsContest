@@ -1,11 +1,13 @@
 package com.aataganov.telegramcharts.views;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.support.annotation.ColorInt;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -91,6 +93,7 @@ public class ViewChart extends View {
     private PublishSubject<Integer> maxYSubject = PublishSubject.create();
     private PublishSubject<Integer> dateStepSubject = PublishSubject.create();
     private boolean freezeDraw;
+    private int backgroundColor;
 
     public ViewChart(Context context) {
         super(context);
@@ -176,16 +179,18 @@ public class ViewChart extends View {
 
 
     private void initPaints(){
+        backgroundColor = getResources().getColor(R.color.colorBackground);
+
         graphPaint.setAntiAlias(true);
         graphPaint.setStrokeWidth(stokeWidth);
         graphPaint.setStyle(Paint.Style.STROKE);
 
-        backgroundPaint.setColor(Color.WHITE);
+        backgroundPaint.setColor(backgroundColor);
         backgroundPaint.setStyle(Paint.Style.FILL);
         backgroundPaint.setAntiAlias(true);
 
         metricPaint.setAntiAlias(true);
-        metricPaint.setColor(Color.LTGRAY);
+        metricPaint.setColor(getResources().getColor(R.color.line_color));
         metricPaint.setStyle(Paint.Style.STROKE);
         metricPaint.setStrokeWidth(1);
 
@@ -200,7 +205,8 @@ public class ViewChart extends View {
         selectionCardNamePaint.setTextSize(chartSelectionCardNameTextSize);
         selectionCardValuePaint.setTextSize(chartSelectionCardValuesTextSize);
 
-        selectionCardDatePaint.setColor(Color.BLACK);
+        @ColorInt int color = CommonHelper.resolveColorAttr(getContext(), android.R.attr.textColorPrimary);
+        selectionCardDatePaint.setColor(color);
 
         selectionCardDatePaint.setAntiAlias(true);
         selectionCardNamePaint.setAntiAlias(true);
@@ -208,7 +214,7 @@ public class ViewChart extends View {
 
 
         selectionCardBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        selectionCardBackgroundPaint.setColor(Color.WHITE);
+        selectionCardBackgroundPaint.setColor(backgroundColor);
         selectionCardBackgroundPaint.setShadowLayer(0.5f * stokeWidth , 0, 0, Color.GRAY);
         selectionCardBackgroundPaint.setAntiAlias(true);
     }
@@ -216,7 +222,7 @@ public class ViewChart extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(backgroundColor);
         if(chart == null || freezeDraw) {
             return;
         }

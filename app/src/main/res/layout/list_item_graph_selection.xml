@@ -1,7 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<CheckBox
-    android:id="@+id/checkbox"
-    android:layout_margin="8dp"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/colorBackground"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    xmlns:android="http://schemas.android.com/apk/res/android" />
+    android:layout_height="48dp"
+    >
+
+    <CheckBox
+        android:checked="true"
+        android:theme="@style/AppTheme.AppBarOverlay"
+        android:id="@+id/checkbox"
+        android:layout_marginStart="9dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        xmlns:android="http://schemas.android.com/apk/res/android" />
+    <TextView
+        android:id="@+id/txt_title"
+        android:text="Joined"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
+        android:textColor="?android:textColorPrimary"
+        app:layout_constraintStart_toEndOf="@id/checkbox"
+        app:layout_constraintTop_toTopOf="@id/checkbox"
+        app:layout_constraintBottom_toBottomOf="@id/checkbox"
+        android:layout_marginStart="8dp"
+        android:gravity="center_vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
+    <View
+        android:id="@+id/view_divider"
+        app:layout_constraintStart_toStartOf="@id/txt_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/line_color"/>
+</android.support.constraint.ConstraintLayout>

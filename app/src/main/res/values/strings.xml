@@ -3,4 +3,6 @@
     <string name="chart_title">Followers</string>
     <string name="activity_title">Statistics</string>
     <string name="change_theme">Change theme</string>
+    <string name="btn_titles_next">Next</string>
+    <string name="btn_titles_previous">Previous</string>
 </resources>
